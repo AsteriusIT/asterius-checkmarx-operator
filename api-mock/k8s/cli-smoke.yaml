@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: checkmarx-real-cli-
+  namespace: checkmarx-mock
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 120
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: cx
+          image: checkmarx-real-cli:2.3.67
+          imagePullPolicy: IfNotPresent
+          args:
+            - scan
+            - create
+            - --project-name
+            - mock-project
+            - --branch
+            - main
+            - -s
+            - /source
+            - --scan-types
+            - iac-security
+            - --wait-delay
+            - "1"
+          envFrom:
+            - secretRef:
+                name: checkmarx-mock-auth
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: source
+              mountPath: /source
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: source
+          configMap:
+            name: checkmarx-mock-source
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: checkmarx-mock-source
+  namespace: checkmarx-mock
+data:
+  deployment.yaml: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: mock-input
+    spec:
+      replicas: 1
+      selector:
+        matchLabels: {app: mock-input}
+      template:
+        metadata:
+          labels: {app: mock-input}
+        spec:
+          containers:
+            - name: app
+              image: nginx:1.27

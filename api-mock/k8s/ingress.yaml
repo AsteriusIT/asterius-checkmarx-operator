@@ -1,0 +1,48 @@
+# Local development only: includes WireMock's unauthenticated admin API.
+# nginx on asterius-local already listens on HTTPS localhost:443.
+# Resolve checkmarx-mock.asterius.local to 127.0.0.1 on the browser machine.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: checkmarx-api-mock
+  namespace: checkmarx-mock
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 16m
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: asterius-local-ca
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: checkmarx-mock-tls
+      hosts:
+        - checkmarx-mock.asterius.local
+  rules:
+    - host: checkmarx-mock.asterius.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend: &mock
+              service:
+                name: checkmarx-api-mock
+                port:
+                  number: 8080
+          - path: /auth
+            pathType: Prefix
+            backend: *mock
+          - path: /mock-upload
+            pathType: Prefix
+            backend: *mock
+          - path: /mock-export
+            pathType: Prefix
+            backend: *mock
+          - path: /__admin
+            pathType: Prefix
+            backend: *mock
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: checkmarx-api-ui
+                port:
+                  number: 8080

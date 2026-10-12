@@ -1,0 +1,16 @@
+{
+  "name": "unauthorized-or-unimplemented",
+  "priority": 99,
+  "request": {
+    "method": "ANY",
+    "urlPathPattern": "/api/.*"
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Mock-Only": "true"
+    },
+    "body": "{\"message\": \"MOCK ONLY: missing mock bearer token or endpoint not implemented\", \"code\": 401}"
+  }
+}

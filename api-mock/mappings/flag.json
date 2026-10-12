@@ -1,0 +1,21 @@
+{
+  "name": "flag",
+  "priority": 5,
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/flags/[^/]+",
+    "headers": {
+      "Authorization": {
+        "matches": "Bearer [A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.Ik1PQ0stT05MWS1OT1QtQS1SRUFMLVNJR05BVFVSRSI"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Mock-Only": "true"
+    },
+    "body": "{\"name\": \"{{request.pathSegments.[2]}}\", \"status\": false}"
+  }
+}

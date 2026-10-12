@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: checkmarx-mock
+  labels:
+    app.kubernetes.io/part-of: checkmarx-api-mock
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkmarx-api-mock
+  namespace: checkmarx-mock
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: checkmarx-api-mock
+  template:
+    metadata:
+      labels:
+        app: checkmarx-api-mock
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: wiremock
+          image: wiremock/wiremock:3.13.2@sha256:0d4ecb3e4dc8213fd7a4d37d6a78f6e6b553a6d2e15bd51b0999781282ac61b3
+          imagePullPolicy: IfNotPresent
+          args: ["--global-response-templating", "--disable-gzip", "--max-request-journal-entries", "200"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: JAVA_OPTS
+              value: -Xms64m -Xmx256m
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          startupProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+          volumeMounts:
+            - name: mappings
+              mountPath: /home/wiremock/mappings
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: mappings
+          configMap:
+            name: checkmarx-mock-mappings
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkmarx-api-mock
+  namespace: checkmarx-mock
+spec:
+  selector:
+    app: checkmarx-api-mock
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+# Dummy credentials only. The CLI appends /auth/realms/CX_TENANT itself.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: checkmarx-mock-auth
+  namespace: checkmarx-mock
+type: Opaque
+stringData:
+  CX_BASE_URI: http://checkmarx-api-mock.checkmarx-mock.svc.cluster.local:8080
+  CX_BASE_AUTH_URI: http://checkmarx-api-mock.checkmarx-mock.svc.cluster.local:8080
+  CX_TENANT: mock
+  CX_CLIENT_ID: mock-cli
+  CX_CLIENT_SECRET: mock-secret

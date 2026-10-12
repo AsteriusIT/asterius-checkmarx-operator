@@ -1,0 +1,1790 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Checkmarx One \u2014 local mock API",
+    "version": "2.3.67-mock",
+    "description": "Synthetic responses only; no security analysis. This locally authored specification describes the implemented WireMock fixtures, not the complete official Checkmarx API. Use project mock-project and branch main, one scan at a time. First execute the Authentication token request with the prefilled dummy credentials. Copy access_token, click Authorize, and paste the token (without Bearer). Then create a project and scan; poll twice to reach Completed. Mock control lets you reset scenarios or inspect requests."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This local mock (same origin)"
+    }
+  ],
+  "security": [
+    {
+      "MockBearer": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "MockBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/api/flags/{name}": {
+      "get": {
+        "operationId": "flag",
+        "summary": "flag",
+        "tags": [
+          "Configuration and results"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "flag": {
+                    "value": {
+                      "name": "PACKAGE_ENFORCEMENT_ENABLED",
+                      "status": false
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "PACKAGE_ENFORCEMENT_ENABLED"
+            },
+            "example": "PACKAGE_ENFORCEMENT_ENABLED"
+          }
+        ]
+      }
+    },
+    "/api/flags": {
+      "get": {
+        "operationId": "flags",
+        "summary": "flags",
+        "tags": [
+          "Configuration and results"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "flags": {
+                    "value": {
+                      "flags": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "flags": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/healthcheck": {
+      "get": {
+        "operationId": "health",
+        "summary": "health",
+        "tags": [
+          "Configuration and results"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "health": {
+                    "value": {
+                      "status": "MOCK ONLY"
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/policy_management_service_uri/evaluation": {
+      "get": {
+        "operationId": "policy",
+        "summary": "policy",
+        "tags": [
+          "Configuration and results"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "policy": {
+                    "value": {
+                      "status": "COMPLETED",
+                      "breakBuild": false,
+                      "policies": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "breakBuild": {
+                      "type": "boolean"
+                    },
+                    "policies": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "astProjectId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          {
+            "name": "scanId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "22222222-2222-4222-8222-222222222222"
+            }
+          }
+        ]
+      }
+    },
+    "/api/configuration/project": {
+      "patch": {
+        "operationId": "project-configuration-update",
+        "summary": "project configuration update",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "project-configuration-update": {
+                    "value": []
+                  }
+                },
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "example": []
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "project-id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        ]
+      }
+    },
+    "/api/configuration/project/{projectId}": {
+      "get": {
+        "operationId": "project-configuration",
+        "summary": "project configuration",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "project-configuration": {
+                    "value": []
+                  }
+                },
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "11111111-1111-4111-8111-111111111111"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ]
+      }
+    },
+    "/api/projects": {
+      "post": {
+        "operationId": "project-create",
+        "summary": "project create",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "201": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "project-create": {
+                    "value": {
+                      "id": "11111111-1111-4111-8111-111111111111",
+                      "name": "mock-project",
+                      "mainBranch": "main",
+                      "repoUrl": "",
+                      "createdAt": "2026-01-01T00:00:00Z",
+                      "updatedAt": "2026-01-01T00:00:00Z",
+                      "groups": [],
+                      "tags": {},
+                      "applicationIds": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "mainBranch": {
+                      "type": "string"
+                    },
+                    "repoUrl": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "tags": {
+                      "type": "object",
+                      "properties": {}
+                    },
+                    "applicationIds": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "mainBranch": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                }
+              },
+              "example": {
+                "name": "mock-project",
+                "mainBranch": "main",
+                "tags": {}
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "project-search-empty",
+        "summary": "project search empty",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "project-search-empty": {
+                    "value": {
+                      "totalCount": 0,
+                      "projects": []
+                    }
+                  },
+                  "project-search-existing": {
+                    "value": {
+                      "totalCount": 1,
+                      "projects": [
+                        {
+                          "id": "11111111-1111-4111-8111-111111111111",
+                          "name": "mock-project",
+                          "mainBranch": "main",
+                          "repoUrl": "",
+                          "createdAt": "2026-01-01T00:00:00Z",
+                          "updatedAt": "2026-01-01T00:00:00Z",
+                          "groups": [],
+                          "tags": {},
+                          "applicationIds": []
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCount": {
+                      "type": "integer"
+                    },
+                    "projects": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "mainBranch": {
+                            "type": "string"
+                          },
+                          "repoUrl": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "groups": {
+                            "type": "array",
+                            "items": {}
+                          },
+                          "tags": {
+                            "type": "object",
+                            "properties": {}
+                          },
+                          "applicationIds": {
+                            "type": "array",
+                            "items": {}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "mock-project"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}": {
+      "get": {
+        "operationId": "project-get",
+        "summary": "project get",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "project-get": {
+                    "value": {
+                      "id": "11111111-1111-4111-8111-111111111111",
+                      "name": "mock-project",
+                      "mainBranch": "main",
+                      "repoUrl": "",
+                      "createdAt": "2026-01-01T00:00:00Z",
+                      "updatedAt": "2026-01-01T00:00:00Z",
+                      "groups": [],
+                      "tags": {},
+                      "applicationIds": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "mainBranch": {
+                      "type": "string"
+                    },
+                    "repoUrl": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "tags": {
+                      "type": "object",
+                      "properties": {}
+                    },
+                    "applicationIds": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "11111111-1111-4111-8111-111111111111"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ]
+      }
+    },
+    "/api/results": {
+      "get": {
+        "operationId": "results",
+        "summary": "results",
+        "tags": [
+          "Configuration and results"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "results": {
+                    "value": {
+                      "scanID": "22222222-2222-4222-8222-222222222222",
+                      "totalCount": 0,
+                      "results": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "scanID": {
+                      "type": "string"
+                    },
+                    "totalCount": {
+                      "type": "integer"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scan-id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "22222222-2222-4222-8222-222222222222"
+            }
+          }
+        ]
+      }
+    },
+    "/api/sca/export/requests": {
+      "post": {
+        "operationId": "sca-export-create",
+        "summary": "sca export create",
+        "tags": [
+          "SCA export"
+        ],
+        "responses": {
+          "202": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sca-export-create": {
+                    "value": {
+                      "exportId": "mock-export"
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exportId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ScanID": {
+                    "type": "string"
+                  },
+                  "FileFormat": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "ScanID": "22222222-2222-4222-8222-222222222222",
+                "FileFormat": "Json"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "sca-export-status",
+        "summary": "sca export status",
+        "tags": [
+          "SCA export"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sca-export-status": {
+                    "value": {
+                      "exportId": "mock-export",
+                      "exportStatus": "Completed",
+                      "fileUrl": "https://checkmarx-mock.127.0.0.1.sslip.io/mock-export/report.json"
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exportId": {
+                      "type": "string"
+                    },
+                    "exportStatus": {
+                      "type": "string"
+                    },
+                    "fileUrl": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "mock-export"
+            }
+          },
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "true"
+            }
+          }
+        ]
+      }
+    },
+    "/mock-export/report.json": {
+      "get": {
+        "operationId": "sca-export-download-23",
+        "summary": "sca export download 23",
+        "tags": [
+          "SCA export"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sca-export-download-23": {
+                    "value": {
+                      "Packages": [],
+                      "Vulnerabilities": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Packages": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "Vulnerabilities": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sca/export/requests/mock-export/download": {
+      "get": {
+        "operationId": "sca-export-download-24",
+        "summary": "sca export download 24",
+        "tags": [
+          "SCA export"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sca-export-download-24": {
+                    "value": {
+                      "Packages": [],
+                      "Vulnerabilities": []
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Packages": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "Vulnerabilities": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scans/{scanId}": {
+      "get": {
+        "operationId": "scan-completed",
+        "summary": "Poll scan: Running, then Completed",
+        "tags": [
+          "Scans"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "scan-completed": {
+                    "value": {
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "projectId": "11111111-1111-4111-8111-111111111111",
+                      "projectName": "mock-project",
+                      "branch": "main",
+                      "status": "Completed",
+                      "createdAt": "2026-01-01T00:00:00Z",
+                      "updatedAt": "2026-01-01T00:01:00Z",
+                      "initiator": "MOCK ONLY",
+                      "tags": {},
+                      "engines": [
+                        "sast",
+                        "sca",
+                        "kics"
+                      ],
+                      "metadata": {
+                        "configs": [
+                          {
+                            "type": "sast"
+                          },
+                          {
+                            "type": "sca"
+                          },
+                          {
+                            "type": "kics"
+                          }
+                        ]
+                      },
+                      "statusDetails": [
+                        {
+                          "name": "sast",
+                          "status": "Completed"
+                        },
+                        {
+                          "name": "sca",
+                          "status": "Completed"
+                        },
+                        {
+                          "name": "kics",
+                          "status": "Completed"
+                        }
+                      ]
+                    }
+                  },
+                  "scan-running": {
+                    "value": {
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "projectId": "11111111-1111-4111-8111-111111111111",
+                      "projectName": "mock-project",
+                      "branch": "main",
+                      "status": "Running",
+                      "createdAt": "2026-01-01T00:00:00Z",
+                      "updatedAt": "2026-01-01T00:01:00Z",
+                      "initiator": "MOCK ONLY",
+                      "tags": {},
+                      "engines": [
+                        "sast",
+                        "sca",
+                        "kics"
+                      ],
+                      "metadata": {
+                        "configs": [
+                          {
+                            "type": "sast"
+                          },
+                          {
+                            "type": "sca"
+                          },
+                          {
+                            "type": "kics"
+                          }
+                        ]
+                      },
+                      "statusDetails": [
+                        {
+                          "name": "sast",
+                          "status": "Running"
+                        },
+                        {
+                          "name": "sca",
+                          "status": "Running"
+                        },
+                        {
+                          "name": "kics",
+                          "status": "Running"
+                        }
+                      ]
+                    }
+                  },
+                  "scan-terminal": {
+                    "value": {
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "projectId": "11111111-1111-4111-8111-111111111111",
+                      "projectName": "mock-project",
+                      "branch": "main",
+                      "status": "Completed",
+                      "createdAt": "2026-01-01T00:00:00Z",
+                      "updatedAt": "2026-01-01T00:01:00Z",
+                      "initiator": "MOCK ONLY",
+                      "tags": {},
+                      "engines": [
+                        "sast",
+                        "sca",
+                        "kics"
+                      ],
+                      "metadata": {
+                        "configs": [
+                          {
+                            "type": "sast"
+                          },
+                          {
+                            "type": "sca"
+                          },
+                          {
+                            "type": "kics"
+                          }
+                        ]
+                      },
+                      "statusDetails": [
+                        {
+                          "name": "sast",
+                          "status": "Completed"
+                        },
+                        {
+                          "name": "sca",
+                          "status": "Completed"
+                        },
+                        {
+                          "name": "kics",
+                          "status": "Completed"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "projectId": {
+                      "type": "string"
+                    },
+                    "projectName": {
+                      "type": "string"
+                    },
+                    "branch": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "initiator": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object",
+                      "properties": {}
+                    },
+                    "engines": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "configs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "statusDetails": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "22222222-2222-4222-8222-222222222222"
+            },
+            "example": "22222222-2222-4222-8222-222222222222"
+          }
+        ]
+      }
+    },
+    "/api/scans": {
+      "post": {
+        "operationId": "scan-create",
+        "summary": "scan create",
+        "tags": [
+          "Scans"
+        ],
+        "responses": {
+          "201": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "scan-create": {
+                    "value": {
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "projectId": "11111111-1111-4111-8111-111111111111",
+                      "projectName": "mock-project",
+                      "branch": "main",
+                      "status": "Queued",
+                      "createdAt": "2026-01-01T00:00:00Z",
+                      "updatedAt": "2026-01-01T00:01:00Z",
+                      "initiator": "MOCK ONLY",
+                      "tags": {},
+                      "engines": [
+                        "sast",
+                        "sca",
+                        "kics"
+                      ],
+                      "metadata": {
+                        "configs": [
+                          {
+                            "type": "sast"
+                          },
+                          {
+                            "type": "sca"
+                          },
+                          {
+                            "type": "kics"
+                          }
+                        ]
+                      },
+                      "statusDetails": [
+                        {
+                          "name": "sast",
+                          "status": "Queued"
+                        },
+                        {
+                          "name": "sca",
+                          "status": "Queued"
+                        },
+                        {
+                          "name": "kics",
+                          "status": "Queued"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "projectId": {
+                      "type": "string"
+                    },
+                    "projectName": {
+                      "type": "string"
+                    },
+                    "branch": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "initiator": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object",
+                      "properties": {}
+                    },
+                    "engines": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "configs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "statusDetails": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "project": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "handler": {
+                    "type": "object",
+                    "properties": {
+                      "repoUrl": {
+                        "type": "string"
+                      },
+                      "branch": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "config": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "type": "git",
+                "project": {
+                  "id": "11111111-1111-4111-8111-111111111111"
+                },
+                "handler": {
+                  "repoUrl": "https://github.com/Checkmarx/ast-cli",
+                  "branch": "main"
+                },
+                "config": [
+                  {
+                    "type": "sast"
+                  },
+                  {
+                    "type": "sca"
+                  },
+                  {
+                    "type": "kics"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "scan-list",
+        "summary": "scan list",
+        "tags": [
+          "Scans"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "scan-list": {
+                    "value": {
+                      "totalCount": 1,
+                      "scans": [
+                        {
+                          "id": "22222222-2222-4222-8222-222222222222",
+                          "projectId": "11111111-1111-4111-8111-111111111111",
+                          "projectName": "mock-project",
+                          "branch": "main",
+                          "status": "Completed",
+                          "createdAt": "2026-01-01T00:00:00Z",
+                          "updatedAt": "2026-01-01T00:01:00Z",
+                          "initiator": "MOCK ONLY",
+                          "tags": {},
+                          "engines": [
+                            "sast",
+                            "sca",
+                            "kics"
+                          ],
+                          "metadata": {
+                            "configs": [
+                              {
+                                "type": "sast"
+                              },
+                              {
+                                "type": "sca"
+                              },
+                              {
+                                "type": "kics"
+                              }
+                            ]
+                          },
+                          "statusDetails": [
+                            {
+                              "name": "sast",
+                              "status": "Completed"
+                            },
+                            {
+                              "name": "sca",
+                              "status": "Completed"
+                            },
+                            {
+                              "name": "kics",
+                              "status": "Completed"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCount": {
+                      "type": "integer"
+                    },
+                    "scans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "branch": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "initiator": {
+                            "type": "string"
+                          },
+                          "tags": {
+                            "type": "object",
+                            "properties": {}
+                          },
+                          "engines": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "configs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "statusDetails": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scan-summary": {
+      "get": {
+        "operationId": "scan-summary",
+        "summary": "scan summary",
+        "tags": [
+          "Scans"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "scan-summary": {
+                    "value": {
+                      "totalCount": 1,
+                      "scansSummaries": [
+                        {
+                          "scanId": "22222222-2222-4222-8222-222222222222",
+                          "tenantId": "mock",
+                          "sastCounters": {
+                            "totalCounter": 0,
+                            "severityCounters": []
+                          },
+                          "scaCounters": {
+                            "totalCounter": 0,
+                            "severityCounters": []
+                          },
+                          "kicsCounters": {
+                            "totalCounter": 0,
+                            "severityCounters": []
+                          },
+                          "scaPackagesCounters": {
+                            "totalCounter": 0,
+                            "severityCounters": []
+                          },
+                          "scaContainersCounters": {
+                            "totalCounter": 0,
+                            "severityCounters": []
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCount": {
+                      "type": "integer"
+                    },
+                    "scansSummaries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "scanId": {
+                            "type": "string"
+                          },
+                          "tenantId": {
+                            "type": "string"
+                          },
+                          "sastCounters": {
+                            "type": "object",
+                            "properties": {
+                              "totalCounter": {
+                                "type": "integer"
+                              },
+                              "severityCounters": {
+                                "type": "array",
+                                "items": {}
+                              }
+                            }
+                          },
+                          "scaCounters": {
+                            "type": "object",
+                            "properties": {
+                              "totalCounter": {
+                                "type": "integer"
+                              },
+                              "severityCounters": {
+                                "type": "array",
+                                "items": {}
+                              }
+                            }
+                          },
+                          "kicsCounters": {
+                            "type": "object",
+                            "properties": {
+                              "totalCounter": {
+                                "type": "integer"
+                              },
+                              "severityCounters": {
+                                "type": "array",
+                                "items": {}
+                              }
+                            }
+                          },
+                          "scaPackagesCounters": {
+                            "type": "object",
+                            "properties": {
+                              "totalCounter": {
+                                "type": "integer"
+                              },
+                              "severityCounters": {
+                                "type": "array",
+                                "items": {}
+                              }
+                            }
+                          },
+                          "scaContainersCounters": {
+                            "type": "object",
+                            "properties": {
+                              "totalCounter": {
+                                "type": "integer"
+                              },
+                              "severityCounters": {
+                                "type": "array",
+                                "items": {}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scan-ids",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "22222222-2222-4222-8222-222222222222"
+            }
+          }
+        ]
+      }
+    },
+    "/api/scans/{scanId}/workflow": {
+      "get": {
+        "operationId": "scan-workflow",
+        "summary": "scan workflow",
+        "tags": [
+          "Scans"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "scan-workflow": {
+                    "value": []
+                  }
+                },
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "22222222-2222-4222-8222-222222222222"
+            },
+            "example": "22222222-2222-4222-8222-222222222222"
+          }
+        ]
+      }
+    },
+    "/api/configuration/tenant": {
+      "get": {
+        "operationId": "tenant-configuration",
+        "summary": "tenant configuration",
+        "tags": [
+          "Configuration and results"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "tenant-configuration": {
+                    "value": []
+                  }
+                },
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/realms/mock/protocol/openid-connect/token": {
+      "post": {
+        "operationId": "token",
+        "summary": "token",
+        "tags": [
+          "Authentication"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "token": {
+                    "value": {
+                      "access_token": "<copy the token returned by executing this request>",
+                      "token_type": "Bearer",
+                      "expires_in": 3600
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string"
+                    },
+                    "token_type": {
+                      "type": "string"
+                    },
+                    "expires_in": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "default": "client_credentials"
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "default": "mock-cli"
+                  },
+                  "client_secret": {
+                    "type": "string",
+                    "default": "mock-secret"
+                  }
+                },
+                "required": [
+                  "grant_type",
+                  "client_id",
+                  "client_secret"
+                ]
+              },
+              "example": {
+                "grant_type": "client_credentials",
+                "client_id": "mock-cli",
+                "client_secret": "mock-secret"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads": {
+      "post": {
+        "operationId": "upload-url",
+        "summary": "upload url",
+        "tags": [
+          "Uploads"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "upload-url": {
+                    "value": {
+                      "url": "https://checkmarx-mock.127.0.0.1.sslip.io/mock-upload/source.zip"
+                    }
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mock-upload/source.zip": {
+      "put": {
+        "operationId": "upload",
+        "summary": "upload",
+        "tags": [
+          "Uploads"
+        ],
+        "responses": {
+          "200": {
+            "description": "Synthetic mock response",
+            "content": {
+              "application/json": {
+                "examples": {}
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/zip": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/__admin/reset": {
+      "post": {
+        "operationId": "reset",
+        "summary": "Reset all mock scenarios, mappings and requests",
+        "tags": [
+          "Mock control"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "WireMock admin response"
+          }
+        }
+      }
+    },
+    "/__admin/requests": {
+      "get": {
+        "operationId": "requests",
+        "summary": "Inspect recent requests",
+        "tags": [
+          "Mock control"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "WireMock admin response"
+          }
+        }
+      }
+    },
+    "/__admin/mappings": {
+      "get": {
+        "operationId": "mappings",
+        "summary": "Inspect WireMock mappings",
+        "tags": [
+          "Mock control"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "WireMock admin response"
+          }
+        }
+      }
+    }
+  }
+}

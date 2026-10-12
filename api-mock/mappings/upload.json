@@ -1,0 +1,15 @@
+{
+  "name": "upload",
+  "priority": 5,
+  "request": {
+    "method": "PUT",
+    "urlPath": "/mock-upload/source.zip"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Mock-Only": "true"
+    }
+  }
+}

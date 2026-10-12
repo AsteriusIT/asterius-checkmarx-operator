@@ -1,0 +1,15 @@
+apiVersion: security.example.io/v1alpha1
+kind: CheckmarxScan
+metadata:
+  name: repository-scan
+  namespace: checkmarx-system
+spec:
+  projectName: k8s-repository
+  credentialsSecretRef: checkmarx-auth
+  scanTypes:
+  - sast
+  - sca
+  - iac-security
+  repository:
+    url: https://github.com/juice-shop/juice-shop.git
+    branch: master

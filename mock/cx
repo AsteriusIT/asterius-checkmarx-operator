@@ -1,0 +1,5 @@
+#!/bin/sh
+# No account, network calls, findings or remote success claims.
+printf 'MOCK ONLY: scan command received; no Checkmarx scan was performed.\n'
+if [ "$1" != scan ] || [ "$2" != create ]; then exit 2; fi
+exit "${CX_MOCK_EXIT_CODE:-0}"

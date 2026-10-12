@@ -1,0 +1,103 @@
+package mock
+
+import (
+	"fmt"
+	"time"
+
+	errorConstants "github.com/checkmarx/ast-cli/internal/constants/errors"
+	"github.com/checkmarx/ast-cli/internal/wrappers"
+	"github.com/pkg/errors"
+)
+
+const (
+	code                = 355
+	idNewProjectNameStr = "ID-new-project-name"
+	projectID1Str       = "ProjectID1"
+	projectID2Str       = "ProjectID2"
+	testProjectStr      = "test_project"
+)
+
+type ApplicationsMockWrapper struct{}
+
+func (a ApplicationsMockWrapper) Get(params map[string]string) (*wrappers.ApplicationsResponseModel, error) {
+	if params["name"] == NoPermissionApp {
+		return nil, errors.Errorf(errorConstants.ApplicationDoesntExistOrNoPermission)
+	}
+	if params["name"] == ApplicationDoesntExist {
+		return nil, errors.Errorf(errorConstants.ApplicationDoesntExistOrNoPermission)
+	}
+	if params["name"] == FakeBadRequest400 {
+		return nil, errors.Errorf(errorConstants.FailedToGetApplication)
+	}
+	if params["name"] == FakeInternalServerError500 {
+		return nil, errors.Errorf(errorConstants.FailedToGetApplication)
+	}
+	mockApplication := wrappers.Application{
+		ID:          "mockID",
+		Name:        "MOCK",
+		Description: "This is a mock application",
+		Criticality: 2,
+		ProjectIds:  []string{projectID1Str, projectID2Str, testProjectStr, idNewProjectNameStr},
+		CreatedAt:   time.Now(),
+	}
+	if params["name"] == ExistingApplication {
+		mockApplication.Name = ExistingApplication
+		mockApplication.ID = "ID-newProject"
+		// For ExistingApplication, include "ID-newProject" for polling tests
+		mockApplication.ProjectIds = []string{projectID1Str, projectID2Str, testProjectStr, idNewProjectNameStr, "ID-newProject"}
+		return &wrappers.ApplicationsResponseModel{
+			TotalCount:   1,
+			Applications: []wrappers.Application{mockApplication},
+		}, nil
+	}
+
+	response := &wrappers.ApplicationsResponseModel{
+		TotalCount:   1,
+		Applications: []wrappers.Application{mockApplication},
+	}
+
+	if params["name"] == "anyApplication" {
+		response.TotalCount = 0
+		response.Applications = []wrappers.Application{}
+	}
+	return response, nil
+}
+
+func (a ApplicationsMockWrapper) Update(applicationID string, applicationBody *wrappers.ApplicationConfiguration) (*wrappers.ErrorModel, error) {
+	fmt.Println("called Update application")
+
+	if applicationID == FakeForbidden403 {
+		return nil, errors.Errorf(errorConstants.NoPermissionToUpdateApplication)
+	}
+	if applicationID == FakeUnauthorized401 {
+		return nil, errors.Errorf(errorConstants.StatusUnauthorized)
+	}
+	if applicationID == FakeBadRequest400 {
+		return &wrappers.ErrorModel{
+			Message: "invalid applicationBody",
+			Code:    code,
+			Type:    "validation",
+		}, nil
+	}
+	return nil, nil
+}
+
+func (a ApplicationsMockWrapper) CreateProjectAssociation(applicationID string, requestModel *wrappers.AssociateProjectModel) (*wrappers.ErrorModel, error) {
+	fmt.Println("called Create project association to application")
+	if applicationID == FakeForbidden403 {
+		return nil, errors.Errorf(errorConstants.NoPermissionToUpdateApplication)
+	}
+	if applicationID == FakeUnauthorized401 {
+		return nil, errors.Errorf(errorConstants.StatusUnauthorized)
+	}
+
+	if applicationID == FakeBadRequest400 {
+		return &wrappers.ErrorModel{
+			Message: "invalid applicationBody",
+			Code:    code,
+			Type:    "validation",
+		}, nil
+	}
+
+	return nil, nil
+}

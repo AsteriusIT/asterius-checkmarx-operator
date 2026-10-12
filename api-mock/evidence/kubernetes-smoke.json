@@ -1,0 +1,407 @@
+{
+  "cli_version": "2.3.67",
+  "cases": [
+    {
+      "name": "repository",
+      "exit_code": 0,
+      "requests": [
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 200,
+          "fixture": "token"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/SSCS_NEW_LICENSING_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/PACKAGE_ENFORCEMENT_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects?limit=10000&name=mock-project",
+          "status": 200,
+          "fixture": "project-search-empty"
+        },
+        {
+          "method": "POST",
+          "url": "/api/projects",
+          "status": 201,
+          "fixture": "project-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/AI_SUPPLY_CHAIN_ENGINE_GA_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "POST",
+          "url": "/api/scans",
+          "status": 201,
+          "fixture": "scan-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/healthcheck",
+          "status": 200,
+          "fixture": "health"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "scan-running"
+        },
+        {
+          "method": "GET",
+          "url": "/api/healthcheck",
+          "status": 200,
+          "fixture": "health"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "scan-completed"
+        },
+        {
+          "method": "GET",
+          "url": "/api/policy_management_service_uri/evaluation?astProjectId=11111111-1111-4111-8111-111111111111&scanId=22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "policy"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "scan-terminal"
+        },
+        {
+          "method": "GET",
+          "url": "/api/results?limit=10000&offset=0&scan-id=22222222-2222-4222-8222-222222222222&sort=-severity",
+          "status": 200,
+          "fixture": "results"
+        },
+        {
+          "method": "POST",
+          "url": "/api/sca/export/requests",
+          "status": 202,
+          "fixture": "sca-export-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/sca/export/requests?exportId=mock-export&returnUrl=true",
+          "status": 200,
+          "fixture": "sca-export-status"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/MINIO_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/sca/export/requests/mock-export/download",
+          "status": 200,
+          "fixture": "sca-export-download-24"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/CVSS_V3_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        }
+      ]
+    },
+    {
+      "name": "local-directory",
+      "exit_code": 0,
+      "requests": [
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 200,
+          "fixture": "token"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/SSCS_NEW_LICENSING_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/PACKAGE_ENFORCEMENT_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects?limit=10000&name=mock-project",
+          "status": 200,
+          "fixture": "project-search-empty"
+        },
+        {
+          "method": "POST",
+          "url": "/api/projects",
+          "status": 201,
+          "fixture": "project-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/AI_SUPPLY_CHAIN_ENGINE_GA_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/INCREASE_FILE_UPLOAD_LIMIT?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "POST",
+          "url": "/api/uploads",
+          "status": 200,
+          "fixture": "upload-url"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/MINIO_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "PUT",
+          "url": "/mock-upload/source.zip",
+          "status": 200,
+          "fixture": "upload"
+        },
+        {
+          "method": "POST",
+          "url": "/api/scans",
+          "status": 201,
+          "fixture": "scan-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/healthcheck",
+          "status": 200,
+          "fixture": "health"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "scan-running"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "scan-completed"
+        },
+        {
+          "method": "GET",
+          "url": "/api/healthcheck",
+          "status": 200,
+          "fixture": "health"
+        },
+        {
+          "method": "GET",
+          "url": "/api/policy_management_service_uri/evaluation?astProjectId=11111111-1111-4111-8111-111111111111&scanId=22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "policy"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "scan-terminal"
+        },
+        {
+          "method": "GET",
+          "url": "/api/results?limit=10000&offset=0&scan-id=22222222-2222-4222-8222-222222222222&sort=-severity",
+          "status": 200,
+          "fixture": "results"
+        },
+        {
+          "method": "POST",
+          "url": "/api/sca/export/requests",
+          "status": 202,
+          "fixture": "sca-export-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/sca/export/requests?exportId=mock-export&returnUrl=true",
+          "status": 200,
+          "fixture": "sca-export-status"
+        },
+        {
+          "method": "GET",
+          "url": "/api/sca/export/requests/mock-export/download",
+          "status": 200,
+          "fixture": "sca-export-download-24"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/CVSS_V3_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        }
+      ]
+    },
+    {
+      "name": "failed-scan",
+      "exit_code": 1,
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/healthcheck",
+          "status": 200,
+          "fixture": "health"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 200,
+          "fixture": "token"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/SSCS_NEW_LICENSING_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/PACKAGE_ENFORCEMENT_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/projects?limit=10000&name=mock-project",
+          "status": 200,
+          "fixture": "project-search-empty"
+        },
+        {
+          "method": "POST",
+          "url": "/api/projects",
+          "status": 201,
+          "fixture": "project-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/AI_SUPPLY_CHAIN_ENGINE_GA_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/INCREASE_FILE_UPLOAD_LIMIT?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "POST",
+          "url": "/api/uploads",
+          "status": 200,
+          "fixture": "upload-url"
+        },
+        {
+          "method": "GET",
+          "url": "/api/flags/MINIO_ENABLED?filter=mock",
+          "status": 200,
+          "fixture": "flag"
+        },
+        {
+          "method": "PUT",
+          "url": "/mock-upload/source.zip",
+          "status": 200,
+          "fixture": "upload"
+        },
+        {
+          "method": "POST",
+          "url": "/api/scans",
+          "status": 201,
+          "fixture": "scan-create"
+        },
+        {
+          "method": "GET",
+          "url": "/api/scans/22222222-2222-4222-8222-222222222222",
+          "status": 200,
+          "fixture": "injected-failed-scan"
+        }
+      ]
+    },
+    {
+      "name": "invalid-credentials",
+      "exit_code": 1,
+      "requests": [
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        },
+        {
+          "method": "POST",
+          "url": "/auth/realms/mock/protocol/openid-connect/token",
+          "status": 401,
+          "fixture": "invalid-credentials"
+        }
+      ]
+    }
+  ]
+}

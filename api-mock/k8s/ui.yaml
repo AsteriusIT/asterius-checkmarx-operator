@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkmarx-api-ui
+  namespace: checkmarx-mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: checkmarx-api-ui
+  template:
+    metadata:
+      labels:
+        app: checkmarx-api-ui
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: swagger-ui
+          image: swaggerapi/swagger-ui:v5.33.2@sha256:1f00ef02fcd0e4294657963cbc933202d644dc56f8d72ca5fdc35bfaa80c240e
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SWAGGER_JSON_URL
+              value: /openapi.json
+            - name: VALIDATOR_URL
+              value: none
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, SETUID, SETGID]
+          readinessProbe:
+            httpGet:
+              path: /openapi.json
+              port: http
+          volumeMounts:
+            - name: openapi
+              mountPath: /usr/share/nginx/html/openapi.json
+              subPath: openapi.json
+              readOnly: true
+      volumes:
+        - name: openapi
+          configMap:
+            name: checkmarx-mock-openapi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkmarx-api-ui
+  namespace: checkmarx-mock
+spec:
+  selector:
+    app: checkmarx-api-ui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

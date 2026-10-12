@@ -1,0 +1,21 @@
+{
+  "name": "sca-export-create",
+  "priority": 5,
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/sca/export/requests",
+    "headers": {
+      "Authorization": {
+        "matches": "Bearer [A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.Ik1PQ0stT05MWS1OT1QtQS1SRUFMLVNJR05BVFVSRSI"
+      }
+    }
+  },
+  "response": {
+    "status": 202,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Mock-Only": "true"
+    },
+    "body": "{\"exportId\": \"mock-export\"}"
+  }
+}

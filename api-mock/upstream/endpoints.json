@@ -1,0 +1,242 @@
+[
+  {
+    "key": "CodeBashingPathKey",
+    "environment_constant": "ScansPathEnv",
+    "default_path": "api/codebashing/lessons"
+  },
+  {
+    "key": "CustomStatesAPIPathKey",
+    "environment_constant": "CustomStatesAPIPathEnv",
+    "default_path": "api/custom-states"
+  },
+  {
+    "key": "ScansPathKey",
+    "environment_constant": "ScansPathEnv",
+    "default_path": "api/scans"
+  },
+  {
+    "key": "ProjectsPathKey",
+    "environment_constant": "ProjectsPathEnv",
+    "default_path": "api/projects"
+  },
+  {
+    "key": "ApplicationsPathKey",
+    "environment_constant": "ApplicationsPathEnv",
+    "default_path": "api/applications"
+  },
+  {
+    "key": "GroupsPathKey",
+    "environment_constant": "GroupsPathEnv",
+    "default_path": "auth/realms/organization/pip/groups"
+  },
+  {
+    "key": "ResultsPathKey",
+    "environment_constant": "ResultsPathEnv",
+    "default_path": "api/results"
+  },
+  {
+    "key": "ScanSummaryPathKey",
+    "environment_constant": "ScanSummaryPathEnv",
+    "default_path": "api/scan-summary"
+  },
+  {
+    "key": "RisksOverviewPathKey",
+    "environment_constant": "RisksOverviewPathEnv",
+    "default_path": "api/apisec/static/api/scan/%s/risks-overview"
+  },
+  {
+    "key": "APISecurityResultPathKey",
+    "environment_constant": "APISecurityResultPathEnv",
+    "default_path": "api/apisec/static/api/risks"
+  },
+  {
+    "key": "ScsScanOverviewPathKey",
+    "environment_constant": "ScsScanOverviewPathEnv",
+    "default_path": "api/micro-engines/read/scans/%s/scan-overview"
+  },
+  {
+    "key": "SastResultsPathKey",
+    "environment_constant": "SastResultsPathEnv",
+    "default_path": "api/sast-results"
+  },
+  {
+    "key": "SastResultsPredicatesPathKey",
+    "environment_constant": "SastResultsPredicatesPathEnv",
+    "default_path": "api/sast-results-predicates"
+  },
+  {
+    "key": "ScaResultsPredicatesPathKey",
+    "environment_constant": "ScaResultsPredicatesPathEnv",
+    "default_path": "api/sca/management-of-risk/package-vulnerabilities"
+  },
+  {
+    "key": "KicsResultsPathKey",
+    "environment_constant": "KicsResultsPathEnv",
+    "default_path": "api/kics-results"
+  },
+  {
+    "key": "KicsResultsPredicatesPathKey",
+    "environment_constant": "KicsResultsPredicatesPathEnv",
+    "default_path": "api/kics-results-predicates"
+  },
+  {
+    "key": "ScsResultsReadPredicatesPathKey",
+    "environment_constant": "ScsResultsReadPredicatesPathEnv",
+    "default_path": "api/micro-engines/read/predicates"
+  },
+  {
+    "key": "ScsResultsWritePredicatesPathKey",
+    "environment_constant": "ScsResultsWritePredicatesPathEnv",
+    "default_path": "api/micro-engines/write/predicates"
+  },
+  {
+    "key": "BflPathKey",
+    "environment_constant": "BflPathEnv",
+    "default_path": "api/bfl"
+  },
+  {
+    "key": "PRDecorationGithubPathKey",
+    "environment_constant": "PRDecorationGithubPathEnv",
+    "default_path": "api/flow-publisher/pr/github"
+  },
+  {
+    "key": "PRDecorationGitlabPathKey",
+    "environment_constant": "PRDecorationGitlabPathEnv",
+    "default_path": "api/flow-publisher/pr/gitlab"
+  },
+  {
+    "key": "PRDecorationBitbucketCloudPathKey",
+    "environment_constant": "PRDecorationBitbucketCloudPathEnv",
+    "default_path": "api/flow-publisher/pr/bitbucket"
+  },
+  {
+    "key": "PRDecorationBitbucketServerPathKey",
+    "environment_constant": "PRDecorationBitbucketServerPathEnv",
+    "default_path": "api/flow-publisher/pr/bitbucket-server"
+  },
+  {
+    "key": "PRDecorationAzurePathKey",
+    "environment_constant": "PRDecorationAzurePathEnv",
+    "default_path": "api/flow-publisher/pr/azure"
+  },
+  {
+    "key": "DescriptionsPathKey",
+    "environment_constant": "DescriptionsPathEnv",
+    "default_path": "api/queries/descriptions"
+  },
+  {
+    "key": "TenantConfigurationPathKey",
+    "environment_constant": "TenantConfigurationPathEnv",
+    "default_path": "api/configuration/tenant"
+  },
+  {
+    "key": "UploadsPathKey",
+    "environment_constant": "UploadsPathEnv",
+    "default_path": "api/uploads"
+  },
+  {
+    "key": "SastRmPathKey",
+    "environment_constant": "SastRmPathEnv",
+    "default_path": "api/sast-rm"
+  },
+  {
+    "key": "HealthcheckPathKey",
+    "environment_constant": "HealthcheckPathEnv",
+    "default_path": "api/healthcheck"
+  },
+  {
+    "key": "QueriesPathKey",
+    "environment_constant": "QueriesPathEnv",
+    "default_path": "api/queries"
+  },
+  {
+    "key": "CreateOath2ClientPathKey",
+    "environment_constant": "CreateOath2ClientPathEnv",
+    "default_path": "auth/realms/organization/pip/clients"
+  },
+  {
+    "key": "SastMetadataPathKey",
+    "environment_constant": "SastScanIncPathEnv",
+    "default_path": "api/sast-metadata"
+  },
+  {
+    "key": "LogsPathKey",
+    "environment_constant": "LogsPathEnv",
+    "default_path": "api/logs"
+  },
+  {
+    "key": "ResultsPdfReportPathKey",
+    "environment_constant": "ResultsPdfReportPathEnv",
+    "default_path": "api/reports"
+  },
+  {
+    "key": "ResultsJSONReportPathKey",
+    "environment_constant": "ResultsJSONReportPathEnv",
+    "default_path": "api/reports"
+  },
+  {
+    "key": "ExportPathKey",
+    "environment_constant": "ExportPathEnv",
+    "default_path": "api/sca/export"
+  },
+  {
+    "key": "FeatureFlagsKey",
+    "environment_constant": "FeatureFlagsEnv",
+    "default_path": "api/flags"
+  },
+  {
+    "key": "PolicyEvaluationPathKey",
+    "environment_constant": "PolicyEvaluationPathEnv",
+    "default_path": "api/policy_management_service_uri/evaluation"
+  },
+  {
+    "key": "AccessManagementPathKey",
+    "environment_constant": "AccessManagementPathEnv",
+    "default_path": "api/access-management"
+  },
+  {
+    "key": "ByorPathKey",
+    "environment_constant": "ByorPathEnv",
+    "default_path": "api/byor"
+  },
+  {
+    "key": "AiProxyAzureAiRouteKey",
+    "environment_constant": "AiProxyAzureAiRouteEnv",
+    "default_path": "api/ai-proxy/redirect/externalAzure"
+  },
+  {
+    "key": "AiProxyCheckmarxAiRouteKey",
+    "environment_constant": "AiProxyCheckmarxAiRouteEnv",
+    "default_path": "api/ai-proxy/redirect/azure"
+  },
+  {
+    "key": "RiskManagementPathKey",
+    "environment_constant": "RiskManagementPathEnv",
+    "default_path": "api/risk-management/projects/%s/results?scanID=%s"
+  },
+  {
+    "key": "RealtimeScannerPathKey",
+    "environment_constant": "RealtimeScannerPathEnv",
+    "default_path": "api/realtime-scanner"
+  },
+  {
+    "key": "StartMultiPartUploadPathKey",
+    "environment_constant": "StartMultiPartUploadPathEnv",
+    "default_path": "api/uploads/start-multipart-upload"
+  },
+  {
+    "key": "MultipartPresignedPathKey",
+    "environment_constant": "MultipartPresignedPathEnv",
+    "default_path": "api/uploads/multipart-presigned"
+  },
+  {
+    "key": "CompleteMultiPartUploadPathKey",
+    "environment_constant": "CompleteMultipartUploadPathEnv",
+    "default_path": "api/uploads/complete-multipart-upload"
+  },
+  {
+    "key": "DastEnvironmentsPathKey",
+    "environment_constant": "DastEnvironmentsPathEnv",
+    "default_path": "api/dast/scans/environments"
+  }
+]

@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-input
+spec:
+  selector:
+    matchLabels: {app: mock-input}
+  template:
+    metadata:
+      labels: {app: mock-input}
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.27

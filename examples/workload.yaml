@@ -1,0 +1,13 @@
+apiVersion: security.example.io/v1alpha1
+kind: CheckmarxScan
+metadata:
+  name: workload-scan
+  namespace: checkmarx-system
+spec:
+  projectName: k8s-workload
+  credentialsSecretRef: checkmarx-auth
+  scanTypes:
+  - iac-security
+  workloadRef:
+    kind: Deployment
+    name: demo

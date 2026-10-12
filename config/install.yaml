@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: checkmarx-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: checkmarx-operator
+  namespace: checkmarx-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: checkmarx-operator
+  namespace: checkmarx-system
+rules:
+- apiGroups:
+  - security.example.io
+  resources:
+  - checkmarxscans
+  - checkmarxscans/status
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  - daemonsets
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: checkmarx-operator
+  namespace: checkmarx-system
+subjects:
+- kind: ServiceAccount
+  name: checkmarx-operator
+  namespace: checkmarx-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: checkmarx-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkmarx-operator
+  namespace: checkmarx-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: checkmarx-operator
+  template:
+    metadata:
+      labels:
+        app: checkmarx-operator
+    spec:
+      serviceAccountName: checkmarx-operator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: operator
+        image: checkmarx-operator:dev
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: CX_CLI_IMAGE
+          value: REPLACE_WITH_TESTED_CLI_IMAGE_TAG_OR_DIGEST
+        - name: PYTHONPATH
+          value: /app
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi

@@ -1,0 +1,16 @@
+{
+  "name": "health",
+  "priority": 5,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/healthcheck"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Mock-Only": "true"
+    },
+    "body": "{\"status\": \"MOCK ONLY\"}"
+  }
+}
