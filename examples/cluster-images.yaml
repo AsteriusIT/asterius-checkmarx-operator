@@ -1,4 +1,4 @@
-apiVersion: security.example.io/v1alpha1
+apiVersion: security.asteriusit.fr/v1alpha1
 kind: CheckmarxClusterScan
 metadata:
   name: cluster-images

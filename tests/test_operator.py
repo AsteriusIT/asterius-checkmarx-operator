@@ -7,7 +7,7 @@ from types import SimpleNamespace as NS
 from unittest.mock import Mock, patch
 from operator_src.planner import plan, phase, snapshot, validate
 
-BODY = {'apiVersion':'security.example.io/v1alpha1','kind':'CheckmarxScan',
+BODY = {'apiVersion':'security.asteriusit.fr/v1alpha1','kind':'CheckmarxScan',
         'metadata':{'name':'demo','namespace':'checkmarx-system','uid':'uid-1','generation':1},
         'spec':{'projectName':'demo','credentialsSecretRef':'auth', 'scanTypes':['sast'],
                 'repository':{'url':'https://github.com/example/repo.git','branch':'main'}}}

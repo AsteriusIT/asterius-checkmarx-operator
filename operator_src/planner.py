@@ -5,7 +5,7 @@ import json
 import re
 from urllib.parse import urlsplit
 
-GROUP = "security.example.io"
+GROUP = "security.asteriusit.fr"
 IMAGE_DIGEST = re.compile(r"^([a-zA-Z0-9][a-zA-Z0-9._:/-]*)@sha256:([a-f0-9]{64})$")
 KINDS = {"Deployment": ("apps/v1", "deployments"), "StatefulSet": ("apps/v1", "statefulsets"),
          "DaemonSet": ("apps/v1", "daemonsets"), "Job": ("batch/v1", "jobs"),

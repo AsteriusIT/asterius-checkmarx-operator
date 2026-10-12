@@ -10,7 +10,7 @@ from operator_src import cluster
 from operator_src.images import image_job, image_record, inventory
 
 NOW = datetime(2026, 10, 12, tzinfo=timezone.utc)
-POLICY = {"apiVersion": "security.example.io/v1alpha1", "kind": "CheckmarxClusterScan",
+POLICY = {"apiVersion": "security.asteriusit.fr/v1alpha1", "kind": "CheckmarxClusterScan",
     "metadata": {"name": "images", "uid": "policy-uid", "generation": 1},
     "spec": {"projectName": "images", "credentialsSecretRef": {"namespace": "operator", "name": "auth"},
              "maxConcurrentScans": 2}}

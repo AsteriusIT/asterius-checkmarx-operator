@@ -16,7 +16,7 @@ metadata:
   namespace: checkmarx-operator
 rules:
 - apiGroups:
-  - security.example.io
+  - security.asteriusit.fr
   resources:
   - checkmarxscans
   - checkmarxscans/status
@@ -27,7 +27,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - security.example.io
+  - security.asteriusit.fr
   resources:
   - checkmarximagescans
   - checkmarximagescans/status
@@ -89,10 +89,10 @@ rules:
 - apiGroups: ['']
   resources: [pods]
   verbs: [list]
-- apiGroups: [security.example.io]
+- apiGroups: [security.asteriusit.fr]
   resources: [checkmarxclusterscans]
   verbs: [get, list, watch, patch]
-- apiGroups: [security.example.io]
+- apiGroups: [security.asteriusit.fr]
   resources: [checkmarxclusterscans/status]
   verbs: [get, patch, update]
 ---
