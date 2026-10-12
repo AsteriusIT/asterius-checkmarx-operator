@@ -66,6 +66,8 @@ def image_record(policy, namespace, key, entry, allowed):
 def run_key(policy, scanner_image):
     spec = policy["spec"]
     inputs = {k: spec.get(k) for k in ("projectName", "credentialsSecretRef", "timeoutSeconds", "rerunToken")}
+    if "registryCredentialsSecretRef" in spec:
+        inputs["registryCredentialsSecretRef"] = spec["registryCredentialsSecretRef"]
     inputs["scannerImage"] = scanner_image
     return hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
 
@@ -88,6 +90,8 @@ def image_job(record, policy, scanner_image, attempt):
         "credentialsSecretRef": spec["credentialsSecretRef"]["name"], "scanTypes": ["container-security"],
         "imageRef": record["spec"]["image"],
         "timeoutSeconds": spec.get("timeoutSeconds", 1800), "rerunToken": run_key(policy, scanner_image)}
+    if "registryCredentialsSecretRef" in spec:
+        body["spec"]["registryCredentialsSecretRef"] = spec["registryCredentialsSecretRef"]["name"]
     job = plan(body, scanner_image)[3]
     job["metadata"]["labels"][POLICY_LABEL] = policy["metadata"]["uid"]
     return job

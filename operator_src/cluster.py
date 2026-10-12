@@ -9,7 +9,7 @@ from kubernetes.client.exceptions import ApiException
 
 from operator_src.images import (POLICY_LABEL, due, image_job, image_record,
                                  inventory, run_key, timestamp, utcnow)
-from operator_src.planner import GROUP, phase
+from operator_src.planner import GROUP, phase, validate_registry_secret_name
 
 VERSION = "v1alpha1"
 RECORDS = "checkmarximagescans"
@@ -35,6 +35,13 @@ def reconcile_policy(body, patch, custom, core, batch, now, scanner_image, names
     if spec["credentialsSecretRef"]["namespace"] != namespace:
         patch.status.update(phase="Invalid", message="Credentials must be in the operator namespace")
         return
+    registry = spec.get("registryCredentialsSecretRef")
+    if registry is not None:
+        if not isinstance(registry, dict) or registry.get("namespace") != namespace:
+            patch.status.update(phase="Invalid", message="Registry credentials must be in the operator namespace")
+            return
+        # Validate before discovery or queue processing, including empty inventories.
+        validate_registry_secret_name(registry.get("name"))
     selector = POLICY_LABEL + "=" + meta["uid"]
     discovery = spec.get("discovery", {})
     # Polling also recovers Pod changes missed while the operator was stopped.

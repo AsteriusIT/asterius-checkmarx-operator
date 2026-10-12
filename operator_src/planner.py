@@ -12,6 +12,11 @@ KINDS = {"Deployment": ("apps/v1", "deployments"), "StatefulSet": ("apps/v1", "s
          "CronJob": ("batch/v1", "cronjobs")}
 
 
+def validate_registry_secret_name(name):
+    if not isinstance(name, str) or len(name) > 253 or not re.fullmatch(r"[a-z0-9]([-a-z0-9.]*[a-z0-9])?", name):
+        raise ValueError("Registry credentials require a valid Secret name")
+
+
 def validate(spec):
     if sum(bool(spec.get(k)) for k in ("repository", "workloadRef", "imageRef")) != 1:
         raise ValueError("Specify exactly one scan target")
@@ -36,6 +41,10 @@ def validate(spec):
         raise ValueError("Unsupported scan type")
     if "workloadRef" in spec and types != ["iac-security"]:
         raise ValueError("Workload scans require scanTypes: [iac-security]")
+    if "registryCredentialsSecretRef" in spec:
+        if "imageRef" not in spec:
+            raise ValueError("Registry credentials require an image scan")
+        validate_registry_secret_name(spec["registryCredentialsSecretRef"])
 
 
 def snapshot(workload):
@@ -100,10 +109,19 @@ def plan(body, image, workload=None):
                                "seccompProfile": {"type": "RuntimeDefault"}},
            "containers": [container], "volumes": [{"name": "tmp", "emptyDir": {"sizeLimit": "2Gi"}}]}
     cm = None
+    if spec.get("registryCredentialsSecretRef"):
+        args.append("--containers-local-resolution")
+        container["env"].append({"name": "DOCKER_CONFIG", "value": "/registry-auth"})
+        container["volumeMounts"].append({"name": "registry-auth", "mountPath": "/registry-auth", "readOnly": True})
+        pod["volumes"].append({"name": "registry-auth", "secret": {
+            "secretName": spec["registryCredentialsSecretRef"], "defaultMode": 0o440,
+            "items": [{"key": ".dockerconfigjson", "path": "config.json"}]}})
     if image_ref:
-        # The CLI requires a source folder even for explicit cloud-resolved images.
+        # The CLI requires a source folder even for explicit images.
         pod["volumes"].append({"name": "source", "emptyDir": {}})
-        container["volumeMounts"].append({"name": "source", "mountPath": "/source", "readOnly": True})
+        # Local resolution writes its .checkmarx/containers report in this folder.
+        container["volumeMounts"].append({"name": "source", "mountPath": "/source",
+                                         "readOnly": not bool(spec.get("registryCredentialsSecretRef"))})
     if content is not None:
         cm = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": copy.deepcopy(metadata),
               "immutable": True, "data": {"workload.yaml": content}}

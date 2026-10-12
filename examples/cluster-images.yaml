@@ -7,6 +7,10 @@ spec:
   credentialsSecretRef:
     namespace: checkmarx-operator
     name: checkmarx-auth
+  # Optional: mount Docker registry credentials and enable local image resolution.
+  # registryCredentialsSecretRef:
+  #   namespace: checkmarx-operator
+  #   name: nexus-registry-auth
   discovery:
     scanExisting: true
     scanNewImages: true

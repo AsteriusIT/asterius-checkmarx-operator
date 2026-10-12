@@ -103,7 +103,55 @@ Use `discovery.includeNamespaces` and `discovery.excludeNamespaces` to limit cov
 
 Each `CheckmarxImageScan` records its Job, phase and Pod references. Local image IDs without a pullable digest report `Unavailable`. Keep image records and Jobs to preserve scan history; a missing image Job reports `Lost` until explicitly retried. Deleting the cluster scan removes its records and Jobs through owner references, without cancelling remote scans.
 
-Private registry authentication, local image export and findings storage are not implemented. Local mock scans use synthetic results.
+### Private registries (including Nexus)
+
+Create a `kubernetes.io/dockerconfigjson` Secret in the execution namespace
+(`checkmarx-operator` by default). Use a Docker configuration containing inline
+registry authentication; `credsStore` and `credHelpers` require external helpers
+that are not included in the runner. The registry hostname and port must match
+the image references used by your Pods.
+
+```sh
+# Use a dedicated Docker configuration and a Nexus account with pull access.
+# docker login prompts for the password; do not commit the resulting file.
+docker --config ./nexus-auth login nexus.example.com:5000
+kubectl -n checkmarx-operator create secret generic nexus-registry-auth \
+  --type=kubernetes.io/dockerconfigjson \
+  --from-file=.dockerconfigjson=./nexus-auth/config.json
+```
+
+Add the optional reference to your `CheckmarxClusterScan`:
+
+```yaml
+spec:
+  registryCredentialsSecretRef:
+    namespace: checkmarx-operator
+    name: nexus-registry-auth
+```
+
+Reapply `config/cluster-crd.yaml` when upgrading, then apply your cluster scan.
+The operator mounts `.dockerconfigjson` as read-only `/registry-auth/config.json`,
+sets `DOCKER_CONFIG=/registry-auth`, and adds `--containers-local-resolution`.
+The resolver retrieves image contents directly from the registry without a
+Docker daemon or socket. The operator does not read or copy Secret contents,
+and it rejects references outside the execution namespace. Missing Secrets or
+missing `.dockerconfigjson` keys prevent the scanner Pod from starting.
+
+The scanner Job needs network access to Nexus and Checkmarx, trusted registry
+TLS certificates, and enough temporary space and memory for image resolution.
+The default runner trusts public certificate authorities; add your internal CA
+to a custom runner when needed. Jobs currently have 2 GiB of temporary storage
+and a 1 GiB memory limit; larger images may require adjusting the Job template.
+
+The Secret can hold authentication for multiple registries. Setting the reference
+enables local resolution for all images in that policy. Without it, scans continue
+using cloud resolution. Changing or removing the reference triggers rescans of
+present, enabled images once active Jobs finish. Updating Secret contents alone
+does not trigger a rescan; change `spec.rerunToken` to retry after credential rotation.
+
+Real private-registry scans still need validation against your Nexus and Checkmarx
+environment. Local image export and findings storage are not implemented. Local
+mock scans use synthetic results.
 
 ## Development
 

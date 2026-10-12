@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 from test_operator import ApiException
 from operator_src import cluster
 from operator_src.images import image_job, image_record, inventory
+from operator_src.planner import validate_registry_secret_name
 
 NOW = datetime(2026, 10, 12, tzinfo=timezone.utc)
 POLICY = {"apiVersion": "security.asteriusit.fr/v1alpha1", "kind": "CheckmarxClusterScan",
@@ -111,11 +112,62 @@ class InventoryTests(unittest.TestCase):
         self.assertFalse(job["spec"]["template"]["spec"]["automountServiceAccountToken"])
         self.assertTrue(container["securityContext"]["readOnlyRootFilesystem"])
         self.assertEqual(container["envFrom"], [{"secretRef": {"name": "auth"}}])
+        self.assertNotIn("--containers-local-resolution", container["args"])
+        self.assertFalse(any("secret" in v for v in job["spec"]["template"]["spec"]["volumes"]))
+        self.assertTrue(next(m for m in container["volumeMounts"] if m["name"] == "source")["readOnly"])
         self.assertEqual(job, image_job(record, POLICY, "scanner:1", 1))
         self.assertNotEqual(job["metadata"]["name"], image_job(record, POLICY, "scanner:1", 2)["metadata"]["name"])
 
 
 class ClusterQueueTests(unittest.TestCase):
+    def test_registry_credentials_mount_and_policy_changes_rescan(self):
+        h = Harness([pod()])
+        h.policy["spec"]["registryCredentialsSecretRef"] = {"namespace": "operator", "name": "nexus-auth"}
+        h.run()
+        job = h.batch.create_namespaced_job.call_args.args[1]
+        template = job["spec"]["template"]["spec"]
+        container = template["containers"][0]
+        self.assertIn("--containers-local-resolution", container["args"])
+        self.assertIn({"name": "DOCKER_CONFIG", "value": "/registry-auth"}, container["env"])
+        self.assertIn({"name": "registry-auth", "mountPath": "/registry-auth", "readOnly": True}, container["volumeMounts"])
+        self.assertFalse(next(m for m in container["volumeMounts"] if m["name"] == "source")["readOnly"])
+        self.assertTrue(container["securityContext"]["readOnlyRootFilesystem"])
+        volume = next(v for v in template["volumes"] if v["name"] == "registry-auth")
+        self.assertEqual(volume["secret"], {"secretName": "nexus-auth", "defaultMode": 0o440,
+                         "items": [{"key": ".dockerconfigjson", "path": "config.json"}]})
+        self.assertEqual(template["securityContext"]["fsGroup"], 10001)
+        self.assertFalse(template["automountServiceAccountToken"])
+        self.assertEqual(container["envFrom"], [{"secretRef": {"name": "auth"}}])
+        h.finish(h.jobs[-1]); h.run()
+        self.assertEqual(len(h.jobs), 1)
+        h.policy["spec"]["registryCredentialsSecretRef"]["name"] = "nexus-auth-v2"
+        h.run()
+        self.assertEqual(len(h.jobs), 2)
+        self.assertNotEqual(job["metadata"]["name"], h.jobs[-1].metadata.name)
+        h.finish(h.jobs[-1]); h.run()
+        del h.policy["spec"]["registryCredentialsSecretRef"]
+        h.run()
+        self.assertEqual(len(h.jobs), 3)
+        container = h.batch.create_namespaced_job.call_args.args[1]["spec"]["template"]["spec"]["containers"][0]
+        self.assertNotIn("--containers-local-resolution", container["args"])
+
+    def test_registry_secret_namespace_rejected_before_discovery(self):
+        h = Harness([pod()])
+        h.policy["spec"]["registryCredentialsSecretRef"] = {"namespace": "apps", "name": "nexus-auth"}
+        self.assertEqual(h.run()["phase"], "Invalid")
+        h.core.list_pod_for_all_namespaces.assert_not_called()
+        h.batch.create_namespaced_job.assert_not_called()
+
+    def test_invalid_registry_secret_names_rejected(self):
+        for name in (None, "", "../auth", "UPPER", "-auth", "auth-", "a" * 254, {"name": "auth"}):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                validate_registry_secret_name(name)
+        h = Harness([])
+        h.policy["spec"]["registryCredentialsSecretRef"] = {"namespace": "operator"}
+        with self.assertRaisesRegex(ValueError, "valid Secret name"):
+            h.run()
+        h.core.list_pod_for_all_namespaces.assert_not_called()
+
     def test_queue_limit_restart_and_slot_release(self):
         h = Harness([pod(digest=d) for d in "abc"])
         status = h.run()
