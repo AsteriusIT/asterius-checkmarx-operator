@@ -1,113 +1,102 @@
-# Kubernetes Checkmarx Operator — initial MVP
+# Kubernetes Checkmarx Operator
 
-A namespace-scoped Python/Kopf operator for **Checkmarx One**. This is an initial implementation built against public CLI documentation; no account, Kubernetes cluster, image build or real Checkmarx scan was available for integration validation. It does not target legacy CxSAST/CxSCA APIs.
+A Kubernetes operator that runs Checkmarx One scans through CLI Jobs in a dedicated namespace.
 
-## MVP scope and product model
+- **Public Git repositories:** SAST, SCA and IaC scans.
+- **Kubernetes workloads:** IaC scans of Deployment, StatefulSet, DaemonSet, Job and CronJob configuration in the same namespace.
+- **Cluster images:** automatic discovery and container security scans of images used by running Pods across namespaces.
 
-| Target | Implemented analysis | Source submitted |
-|---|---|---|
-| Public HTTPS Git repository | SAST, SCA, IaC (licensed engines required) | Repository URL and branch |
-| Deployment, StatefulSet, DaemonSet, Job, CronJob in the same namespace | IaC misconfiguration analysis | Kubernetes resource identity and spec snapshot |
+Workload scans inspect deployment configuration; cluster image scans inspect image contents. This is an initial MVP; real Checkmarx integration still needs validation.
 
-A workload is not source code. SAST cannot recover the application source from its running Pod. This first workload adapter checks deployment configuration; it does **not** scan image packages, live processes, network behavior or exploitability. Container image scanning is the next adapter, using resolved image digests and Checkmarx's documented container-security workflow.
+## Quick start
 
-One namespaced `CheckmarxScan` expresses one desired scan target. The operator polls every 30 seconds and creates a CLI Job. Owner references let Kubernetes remove child Jobs and snapshot ConfigMaps when the CR is deleted. CR status exposes `phase`, `jobName`, `inputDigest` and `observedGeneration`. `Completed` means the CLI Job exited successfully, not that the target has no vulnerabilities. `Failed` includes scanner, policy, authentication, image and execution failures; inspect Job/Pod diagnostics to distinguish them.
+Requires Docker, kubectl and a development Kubernetes cluster. Run commands from the repository root.
 
-## Repository layout
-
-| Path | Responsibility |
-|---|---|
-| `operator_src/planner.py` | Validation, snapshot redaction, input hashing, Job/ConfigMap construction |
-| `operator_src/handlers.py` | Kopf timer, Kubernetes reads, idempotent child creation, status reconciliation |
-| `config/crd.yaml` | Structural v1alpha1 CRD, target validation and status subresource |
-| `config/install.yaml` | Namespace, ServiceAccount, namespace RBAC, single-replica Deployment |
-| `examples/` | Repository scan, workload scan and demo Deployment |
-| `runner/Dockerfile` | Runtime image for a supplied, verified official Linux CLI binary |
-| `mock/` | Account-free mock CLI image; performs no analysis |
-| `api-mock/` | Official CLI API contracts and a WireMock HTTP backend; runs the real CLI without an account |
-| `tests/test_operator.py` | Offline planning and reconciliation tests using dependency doubles |
-| `Dockerfile`, `requirements.txt`, `Makefile` | Operator packaging and development commands |
-
-## Run the offline tests
-
-```sh
-cd checkmarx-operator
-make test
-```
-
-Tests use only Python's standard library. They check stable identity, changed workload inputs, secret redaction, target validation, terminal states, conflict races, ownership collision protection and serialization of active runs. They do not validate Kopf, CRD admission, Kubernetes RBAC or CLI behavior. Controller dependencies are pinned to explicit starting versions and require installation/container smoke testing before deployment.
-
-## Account-free cluster smoke test
-
-To exercise the **real Checkmarx CLI** against a local HTTP API mock, see
-[`api-mock/README.md`](api-mock/README.md). It includes copied official CLI API
-contracts, a pinned WireMock server, Kubernetes manifests and a deployment script
-for the dedicated `checkmarx-mock` namespace on `asterius-local`.
-The following older smoke test substitutes the CLI executable itself.
-
-The API mock runs the official WireMock image with ConfigMap-mounted mappings.
-Its Swagger UI is exposed through the local nginx ingress at
-[Checkmarx mock API UI](https://checkmarx-mock.asterius.local/).
-
-Requires Docker, kubectl and a development cluster. Build/load or push these images so your cluster can pull them:
+Build the operator and mock CLI images, then load them into your cluster or push them to a registry it can access:
 
 ```sh
 docker build -t checkmarx-operator:dev .
 docker build -t checkmarx-mock:dev mock/
 ```
 
-Change `CX_CLI_IMAGE` in `config/install.yaml` to `checkmarx-mock:dev`. Update the operator image to your registry if necessary. The mock is intentionally explicit: it prints `MOCK ONLY` and submits nothing. Then:
+Set `CX_CLI_IMAGE` to `checkmarx-mock:dev` in `config/install.yaml`. Adjust the operator image if using a registry. Then deploy and submit the example scans:
 
 ```sh
-kubectl apply -f config/crd.yaml
+kubectl apply -f config/crd.yaml -f config/cluster-crd.yaml -f config/image-crd.yaml
 kubectl apply -f config/install.yaml
-kubectl -n checkmarx-system create secret generic checkmarx-auth --from-literal=CX_MOCK_EXIT_CODE=0
+kubectl -n checkmarx-operator create secret generic checkmarx-auth --from-literal=CX_MOCK_EXIT_CODE=0
 kubectl apply -f examples/workload-target.yaml
 kubectl apply -f examples/workload.yaml
 kubectl apply -f examples/repository.yaml
-kubectl -n checkmarx-system get cxscan -w
+kubectl -n checkmarx-operator get cxscan -w
 ```
 
-Find `status.jobName` with `kubectl get cxscan NAME -n checkmarx-system -o yaml`, then run `kubectl logs job/JOB_NAME -n checkmarx-system`. Change the mock Secret's `CX_MOCK_EXIT_CODE` to `1` and change `spec.rerunToken` to exercise failure handling.
+The mock CLI performs no analysis. For testing the real CLI against a local API mock without an account, follow the [API mock guide](api-mock/README.md).
 
-The supplied installation watches only `checkmarx-system`. For a different namespace, change the namespace fields, RoleBinding subject, and Dockerfile's Kopf `--namespace` argument (or override Deployment args). Use one operator per namespace for this MVP; no cluster-wide discovery permissions are granted.
+For `kind-asterius-local` with the API mock already running, use the local configuration instead. It runs the real CLI with dummy credentials:
 
-## Connect Checkmarx One when account access returns
+```sh
+docker build -t checkmarx-operator:dev .
+kind load docker-image --name asterius-local checkmarx-operator:dev checkmarx-real-cli:2.3.67
+kubectl --context kind-asterius-local apply -k overlays/local
+kubectl --context kind-asterius-local -n checkmarx-operator rollout status deployment/checkmarx-operator
+```
 
-1. Download a specific official Linux CLI release, verify its checksum and place the executable at `runner/cx`. The executable is intentionally not bundled. Build `docker build -t YOUR_REGISTRY/checkmarx-runner:YOUR_VERSION runner/`, push it and configure `CX_CLI_IMAGE` with its immutable digest. The runner must expose `cx` on PATH and work as UID 10001 with `/tmp` as its writable home. The Dockerfiles' base image tags are starting points; pin their digests for release builds.
-2. Replace the mock Secret with a dedicated Checkmarx integration Secret containing `CX_APIKEY`, `CX_BASE_URI`, `CX_BASE_AUTH_URI` and `CX_TENANT`, using the actual tenant-specific values from Checkmarx documentation. `CX_BASE_AUTH_URI` is the IAM variable bound by the pinned CLI 2.3.67; verify configuration for other releases. OAuth client credentials (`CX_CLIENT_ID`, `CX_CLIENT_SECRET`) are an alternative. Do not commit real Secret YAML. The operator references the Secret; it has no Secret read permission. Kubernetes injects it directly into the scanner Pod.
-3. Confirm network access to Checkmarx authentication, API/upload endpoints and repository host; configure environment-specific egress restrictions. Ensure the integration identity can create/read projects and execute the selected licensed scanners.
-4. Run the official CLI against a tiny public repository outside Kubernetes first; verify authentication, synchronous completion, expected exit codes and project permissions for the exact pinned version. Repeat with one Kubernetes manifest directory and `--scan-types iac-security`.
-5. Apply one scan CR, inspect CLI logs and Checkmarx UI, and correlate the real remote scan to the Job. Confirm success and deliberate authentication/policy failure before broader rollout.
+## Use Checkmarx One
 
-The command is `cx scan create --project-name PROJECT --branch BRANCH -s SOURCE --scan-types TYPES`; arguments are passed directly, without a shell. No `--async` is used. The operator intentionally does not guess a JSON response schema or parse human CLI output for scan IDs.
+1. Download an official Linux CLI release, verify its checksum and place the executable at `runner/cx`.
+2. Build and push a runner image:
 
-## Reconciliation and retry semantics
+   ```sh
+   docker build -t YOUR_REGISTRY/checkmarx-runner:YOUR_VERSION runner/
+   docker push YOUR_REGISTRY/checkmarx-runner:YOUR_VERSION
+   ```
 
-Job names hash CR UID, generation, spec, CLI image and sanitized workload contents. Repeated reconciliation reuses the existing Job; a workload spec change produces a new input. A new target waits while the previous Job is pending/running. Repository branches are mutable: remote commit changes are **not** discovered automatically. Change `spec.rerunToken` to trigger a new submission, including retries after a failed scan. Changing credentials alone does not retry a failed Job.
+3. Set `CX_CLI_IMAGE` in the installation manifest to the runner image, preferably pinned by digest, and reapply it.
+4. Replace the mock Secret with your integration credentials: `CX_APIKEY`, `CX_BASE_URI`, `CX_BASE_AUTH_URI` and `CX_TENANT`. OAuth client credentials (`CX_CLIENT_ID`, `CX_CLIENT_SECRET`) are also supported. Keep credentials out of Git.
+5. Verify network access, project permissions and scanner licensing, then submit an example scan and inspect its Job logs and results in Checkmarx.
 
-Jobs use `backoffLimit: 0` to reduce accidental duplicate remote scans and `activeDeadlineSeconds` to bound cluster execution. There is no Job TTL: completed Jobs are the reconciliation record and remain until the CR is deleted. Do not delete them while the CR remains; the initial controller can recreate a missing Job and submit again. Kubernetes node loss, network ambiguity or operator restart around a remote submission cannot provide exactly-once execution. A durable remote scan ID and API reconciliation are required before production use.
+## Scan behavior
 
-Snapshots are immutable ConfigMaps limited to 800 KB. The snapshot retains spec plus resource name/namespace; it excludes top-level annotations, status and transient metadata, and redacts literal container environment values. It does **not** implement general-purpose secret detection: commands, args, nested annotations, labels and other inline spec fields may contain sensitive data. Use Kubernetes Secret references and review submitted manifests. No Secret resource contents are fetched. Redaction also means literal env-value changes alone do not trigger scans and some IaC checks may lose context.
+The operator checks scans every 30 seconds. Read `status.jobName` to find the scanner Job:
 
-Jobs run without a service-account token, as non-root, with dropped capabilities, a read-only root filesystem and bounded resources. The operator is single replica with Recreate deployment strategy and Kopf standalone mode; it has no leader election. Resource naming is checked against owner UID. Restrict who can create Scan CRs, Jobs and referenced credentials in this dedicated namespace. Multiple CRs can submit concurrently: global quotas/concurrency limits are not implemented.
+```sh
+kubectl -n checkmarx-operator get cxscan NAME -o yaml
+kubectl -n checkmarx-operator logs job/JOB_NAME
+```
 
-## Next implementation milestones
+`Completed` means the CLI exited successfully; review Checkmarx results for findings. Change `spec.rerunToken` to retry or rescan a repository. Remote branch changes and credential updates do not automatically trigger another scan; workload configuration changes do.
 
-1. **Live contract verification:** pinned CLI/image, real tenant authentication, repository and manifest scans, failure cases; kind-based CRD/RBAC/restart tests.
-2. **Durable remote lifecycle:** API adapter with scan ID, remote status polling, bounded rate-limit retries and cancellation; recover after ambiguous submissions without blindly retrying.
-3. **Findings:** normalize documented JSON/SARIF output; persist reports externally and keep bounded severity counts, scan URL and policy decision in status. Never infer a clean scan from Job success.
-4. **Container workloads:** resolve running image digests, deduplicate by digest, submit container-security scans, add registry auth and map image results back to workloads. No privileged Docker socket in the operator.
-5. **Repository automation:** authenticated clone with scoped Secrets, commit SHA provenance, schedules/webhooks, concurrency budget, retention and Helm packaging.
+Keep completed Jobs while their scan resources exist: deleting a Job can trigger another submission. Deleting a scan resource removes its Kubernetes Jobs and snapshots, but does not cancel or delete remote Checkmarx scans.
 
-Deletion currently removes cluster artifacts; it does not cancel or delete remote Checkmarx scans/projects. Private Git authentication, result storage, schedules, admission blocking and direct REST implementation are outside this first slice.
+Individual scan resources and scanner Jobs stay in `checkmarx-operator`. Cluster discovery has read access to Pods across namespaces. To change the execution namespace, update the manifests, credential references and Kopf namespace argument together.
 
-## Official references
+Workload snapshots redact literal container environment values, but other inline fields can still contain sensitive data. Use Secret references and review manifests before scanning.
 
-- [Checkmarx One CLI quick start](https://docs.checkmarx.com/en/34965-68621-checkmarx-one-cli-quick-start-guide.html)
-- [Scan command and engine flags](https://docs.checkmarx.com/en/34965-68643-scan.html)
-- [CLI configuration and environment variables](https://docs.checkmarx.com/en/34965-68624-checkmarx-one-cli-config-and-environment-variables.html)
-- [CLI authentication](https://docs.checkmarx.com/en/34965-118315-authentication-for-checkmarx-one-cli.html)
-- [Running scans, including container images](https://docs.checkmarx.com/en/34965-350124-running-scans-via-the-cli.html)
+## Automatic cluster image scans
 
-Public documentation checked 2026-10-12. Licensing, tenant endpoint configuration and the exact release's behavior remain live-validation gates.
+Enable discovery of existing and newly observed images:
+
+```sh
+kubectl apply -f examples/cluster-images.yaml
+kubectl get cxcluster
+kubectl -n checkmarx-operator get cximage
+```
+
+The operator inventories running Pods every 30 seconds, including init containers and ephemeral containers. Images are deduplicated by runtime SHA-256 digest within each cluster scan. Short-lived Pods that disappear between checks may be missed. Scanning uses Checkmarx's cloud container-security engine; no Docker socket is needed.
+
+Use `discovery.includeNamespaces` and `discovery.excludeNamespaces` to limit coverage. `scanExisting` controls the first inventory; `scanNewImages` controls subsequently discovered digests. Disabled images remain `Skipped` for that policy. The example excludes the operator namespace to avoid scanning scanner Jobs.
+
+`maxConcurrentScans` limits active Jobs per policy. Set `rescanIntervalSeconds: 86400` for daily rescans of present images; the default `0` scans each digest once. Change `rerunToken` for an explicit retry. `suspend: true` pauses submissions while discovery continues. Completed scans are CLI success, not a guarantee of no vulnerabilities.
+
+Each `CheckmarxImageScan` records its Job, phase and Pod references. Local image IDs without a pullable digest report `Unavailable`. Keep image records and Jobs to preserve scan history; a missing image Job reports `Lost` until explicitly retried. Deleting the cluster scan removes its records and Jobs through owner references, without cancelling remote scans.
+
+Private registry authentication, local image export and findings storage are not implemented. Local mock scans use synthetic results.
+
+## Development
+
+Run the offline tests with Python 3; no additional dependencies are needed:
+
+```sh
+make test
+```

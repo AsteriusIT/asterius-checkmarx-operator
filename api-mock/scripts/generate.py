@@ -15,7 +15,7 @@ def encode(value):
 CLAIMS = {
     "tenant_name": "mock", "tenant_id": "organization::mock", "sub": "mock-cli",
     "ast-base-url": PUBLIC_BASE, "exp": 4102444800, "iat": 1767225600,
-    "ast-license": {"LicenseData": {"allowedEngines": ["sast", "sca", "kics"], "dastEnabled": False}},
+    "ast-license": {"LicenseData": {"allowedEngines": ["sast", "sca", "kics", "containers"], "dastEnabled": False}},
     "roles_ast": ["view-projects", "create-projects", "create-scan", "view-scans"]
 }
 TOKEN = ("{{#assign 'claims'}}" + json.dumps(CLAIMS) + "{{/assign}}" +

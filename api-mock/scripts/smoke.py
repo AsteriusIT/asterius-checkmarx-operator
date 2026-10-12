@@ -31,13 +31,15 @@ def api(path, data=None, method=None):
 def reset():
     api("/__admin/reset", {}, "POST")
 
-def run(source, engines="sast,sca,iac-security", secret="mock-secret", expect=0):
+def run(source, engines="sast,sca,iac-security", secret="mock-secret", expect=0, image=None):
     with tempfile.TemporaryDirectory(prefix="cx-api-mock-") as folder:
         env = {k: v for k, v in os.environ.items() if not k.startswith("CX_")}
         env.update(HOME=folder, USER="cx", CX_BASE_URI=base, CX_BASE_AUTH_URI=base, CX_TENANT="mock",
                    CX_CLIENT_ID="mock-cli", CX_CLIENT_SECRET=secret)
         command = [cx, "scan", "create", "--project-name", "mock-project", "--branch", "main",
                    "-s", source, "--scan-types", engines, "--wait-delay", "1", "--retry", "0"]
+        if image:
+            command.extend(["--container-images", image])
         result = subprocess.run(command, env=env, cwd=folder, text=True, capture_output=True, timeout=90)
         if (result.returncode == 0) != (expect == 0):
             raise AssertionError(f"Unexpected exit {result.returncode}:\n{result.stdout}\n{result.stderr}")
@@ -76,6 +78,15 @@ try:
             assert "project-search-existing" in [e["fixture"] for e in journal()]
         print(f"PASS {name}")
     reset()
+    image = "docker.io/library/nginx@sha256:" + "a" * 64
+    result = run(str(ROOT / "fixtures/source"), "container-security", image=image)
+    submissions = [e for e in api("/__admin/requests")["requests"]
+                   if e["request"]["method"] == "POST" and e["request"]["url"] == "/api/scans"]
+    configs = json.loads(submissions[0]["request"]["body"])["config"]
+    assert {"type": "containers", "value": {"userCustomImages": image}} in configs, configs
+    results["cases"].append({"name": "container-image", "exit_code": result.returncode, "requests": journal()})
+    print("PASS container image digest submitted to container-security engine")
+    reset()
     api("/__admin/mappings", json.loads((ROOT / "fixtures/failed-scan.json").read_text()), "POST")
     failed = run(str(ROOT / "fixtures/source"), "iac-security", expect=1)
     assert "scan did not complete successfully" in failed.stderr + failed.stdout
@@ -88,4 +99,5 @@ try:
 finally:
     reset()
 if args.evidence:
+    args.evidence.parent.mkdir(parents=True, exist_ok=True)
     args.evidence.write_text(json.dumps(results, indent=2) + "\n")

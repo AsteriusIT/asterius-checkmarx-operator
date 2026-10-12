@@ -1,0 +1,17 @@
+apiVersion: security.example.io/v1alpha1
+kind: CheckmarxClusterScan
+metadata:
+  name: cluster-images
+spec:
+  projectName: cluster-images
+  credentialsSecretRef:
+    namespace: checkmarx-operator
+    name: checkmarx-auth
+  discovery:
+    scanExisting: true
+    scanNewImages: true
+    excludeNamespaces:
+      - checkmarx-operator
+  maxConcurrentScans: 2
+  # 0 disables periodic rescans; 86400 rescans daily while images remain present.
+  rescanIntervalSeconds: 0

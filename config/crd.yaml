@@ -44,7 +44,7 @@ spec:
               scanTypes:
                 type: array
                 minItems: 1
-                uniqueItems: true
+                x-kubernetes-list-type: set
                 items:
                   type: string
                   enum:

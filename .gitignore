@@ -32,6 +32,10 @@ coverage.xml
 !.env.sample
 !.env.template
 
+# Downloaded scanner binary and local validation output
+/runner/cx
+/api-mock/evidence/
+
 # Editor and operating system files
 .idea/
 .vscode/

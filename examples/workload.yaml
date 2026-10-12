@@ -2,7 +2,7 @@ apiVersion: security.example.io/v1alpha1
 kind: CheckmarxScan
 metadata:
   name: workload-scan
-  namespace: checkmarx-system
+  namespace: checkmarx-operator
 spec:
   projectName: k8s-workload
   credentialsSecretRef: checkmarx-auth

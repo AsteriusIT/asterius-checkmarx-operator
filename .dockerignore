@@ -1,0 +1,8 @@
+# Only the operator sources and dependencies belong in this image's context.
+**
+!Dockerfile
+!requirements.txt
+!operator_src/
+!operator_src/**
+**/__pycache__/
+**/*.py[cod]

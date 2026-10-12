@@ -9,6 +9,8 @@ ConfigMap. `scripts/generate-ui.py` packages both ConfigMaps in `k8s/configmaps.
 All results are synthetic. No SAST, SCA or IaC analysis occurs, and no Checkmarx
 account, license or service is contacted. Repository URLs are accepted as test
 data; the mock does not clone them. Local sources are ZIP-uploaded to the mock.
+Container-security submissions are also accepted for testing cluster image discovery;
+the mock returns canned results and does not pull or inspect images.
 
 ## Copied official API contracts
 
@@ -155,9 +157,9 @@ material, not automatically enabled mock endpoints. Unsupported requests fail;
 the smoke test checks for unmatched and fallback responses.
 
 `scripts/smoke.py` verifies repository submission, an actual local ZIP upload,
-project reuse, Running/Completed polling, result retrieval, failed-scan exits and
-invalid credentials with the real CLI. `evidence/` contains compact request
-traces (method, URL, status and fixture only) and the cluster validation summary.
+project reuse, container image submission, Running/Completed polling, result retrieval,
+failed-scan exits and invalid credentials with the real CLI. The optional `--evidence`
+argument writes compact request traces locally; these reports are excluded from Git.
 
 To inject a scan failure manually, then restore the default fixtures:
 
@@ -175,7 +177,7 @@ to `checkmarx-real-cli:2.3.67`, and configure each CR's `spec.credentialsSecretR
 **in the operator's scan namespace** with the five dummy variables above.
 For cross-namespace access, use
 `http://checkmarx-api-mock.checkmarx-mock.svc.cluster.local:8080` for both base URIs.
-The mock namespace's Secret is not automatically available in `checkmarx-system`.
+The mock namespace's Secret is not automatically available in `checkmarx-operator`.
 Use `projectName: mock-project` and sequential Scan CRs. This deployment validates
 the CLI/backend boundary; the operator controller is not installed by this script.
 

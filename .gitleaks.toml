@@ -1,0 +1,30 @@
+title = "Checkmarx operator secret scanning"
+
+[extend]
+useDefault = true
+
+# The upstream manifest and historical validation report contain file checksums.
+# Verify the vendored source manifest with scripts/upstream.py.
+[[allowlists]]
+description = "SHA-256 file checksums"
+targetRules = ["generic-api-key", "bitbucket-client-secret"]
+condition = "AND"
+paths = [
+  '''(^|/)api-mock/upstream/manifest\.json$''',
+  '''(^|/)api-mock/evidence/validation\.json$''',
+]
+regexTarget = "line"
+regexes = ['''^\s*"[^"]+": "[a-f0-9]{64}",?\s*$''']
+
+# Exact upstream JWT fixtures with deliberately invalid signatures; keep the
+# vendored files unchanged so their provenance checks remain valid.
+[[allowlists]]
+description = "Upstream JWT parsing test fixtures"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)api-mock/upstream/ast-cli/internal/wrappers/client_test\.go$''']
+regexTarget = "secret"
+regexes = [
+  '''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJhenAiOiJ0ZXN0LWFwcCJ9\.YqenXXXX$''',
+  '''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.XXXXX$''',
+]

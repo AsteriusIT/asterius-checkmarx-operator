@@ -2,17 +2,19 @@
 import copy
 import hashlib
 import json
+import re
 from urllib.parse import urlsplit
 
 GROUP = "security.example.io"
+IMAGE_DIGEST = re.compile(r"^([a-zA-Z0-9][a-zA-Z0-9._:/-]*)@sha256:([a-f0-9]{64})$")
 KINDS = {"Deployment": ("apps/v1", "deployments"), "StatefulSet": ("apps/v1", "statefulsets"),
          "DaemonSet": ("apps/v1", "daemonsets"), "Job": ("batch/v1", "jobs"),
          "CronJob": ("batch/v1", "cronjobs")}
 
 
 def validate(spec):
-    if bool(spec.get("repository")) == bool(spec.get("workloadRef")):
-        raise ValueError("Specify exactly one of repository or workloadRef")
+    if sum(bool(spec.get(k)) for k in ("repository", "workloadRef", "imageRef")) != 1:
+        raise ValueError("Specify exactly one scan target")
     for key in ("projectName", "credentialsSecretRef"):
         if not spec.get(key):
             raise ValueError(key + " is required")
@@ -23,10 +25,14 @@ def validate(spec):
             raise ValueError("Repository must be an HTTPS URL without embedded credentials, query or fragment")
         if not repo.get("branch"):
             raise ValueError("Repository branch is required")
+    elif "imageRef" in spec:
+        if not IMAGE_DIGEST.fullmatch(spec["imageRef"]):
+            raise ValueError("Image scans require a repository@sha256 digest")
     elif spec["workloadRef"]["kind"] not in KINDS:
         raise ValueError("Unsupported workload kind")
     types = spec.get("scanTypes", ["sast", "sca", "iac-security"])
-    if not types or any(t not in {"sast", "sca", "iac-security"} for t in types):
+    supported = {"container-security"} if "imageRef" in spec else {"sast", "sca", "iac-security"}
+    if not types or any(t not in supported for t in types):
         raise ValueError("Unsupported scan type")
     if "workloadRef" in spec and types != ["iac-security"]:
         raise ValueError("Workload scans require scanTypes: [iac-security]")
@@ -74,9 +80,13 @@ def plan(body, image, workload=None):
     metadata = {"name": name, "namespace": meta["namespace"], "ownerReferences": [owner],
                 "labels": {"app.kubernetes.io/managed-by": "checkmarx-operator"}}
     repo = spec.get("repository")
+    image_ref = spec.get("imageRef")
     args = ["scan", "create", "--project-name", spec["projectName"], "--branch",
-            repo["branch"] if repo else "workload", "-s", repo["url"] if repo else "/source",
+            repo["branch"] if repo else (meta["name"] if image_ref else "workload"),
+            "-s", repo["url"] if repo else "/source",
             "--scan-types", ",".join(spec["scanTypes"])]
+    if image_ref:
+        args.extend(["--container-images", image_ref])
     container = {"name": "scan", "image": image, "command": ["cx"], "args": args,
                  "envFrom": [{"secretRef": {"name": spec["credentialsSecretRef"]}}],
                  "env": [{"name": "HOME", "value": "/tmp"}],
@@ -90,6 +100,10 @@ def plan(body, image, workload=None):
                                "seccompProfile": {"type": "RuntimeDefault"}},
            "containers": [container], "volumes": [{"name": "tmp", "emptyDir": {"sizeLimit": "2Gi"}}]}
     cm = None
+    if image_ref:
+        # The CLI requires a source folder even for explicit cloud-resolved images.
+        pod["volumes"].append({"name": "source", "emptyDir": {}})
+        container["volumeMounts"].append({"name": "source", "mountPath": "/source", "readOnly": True})
     if content is not None:
         cm = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": copy.deepcopy(metadata),
               "immutable": True, "data": {"workload.yaml": content}}

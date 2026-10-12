@@ -1,4 +1,4 @@
-"""Namespace-scoped, single-replica Kopf controller."""
+"""Single-replica Kopf controller with namespace-local scan execution."""
 import os
 import kopf
 from kubernetes import client, config
@@ -13,6 +13,7 @@ def startup(settings, **_):
     except config.ConfigException:
         config.load_kube_config()
     settings.posting.enabled = False
+    settings.scanning.disabled = True
 
 
 def ensure(read, create, namespace, name, obj, uid):
@@ -70,3 +71,7 @@ def reconcile(body, patch, **_):
         # Avoid copying server bodies (potentially sensitive) into CR status.
         patch.status.update({"phase": "Blocked", "message": "Kubernetes API status " + str(exc.status)})
         raise kopf.TemporaryError("Kubernetes API operation failed", delay=30)
+
+
+# Register the cluster inventory timer alongside the existing scan timer.
+from operator_src import cluster  # noqa: E402,F401
