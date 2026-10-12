@@ -34,6 +34,7 @@ coverage.xml
 
 # Downloaded scanner binary and local validation output
 /runner/cx
+/runner/legal/
 /api-mock/evidence/
 
 # Editor and operating system files

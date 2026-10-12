@@ -1,5 +1,8 @@
 # Checkmarx One API mock for the real CLI
 
+This independent development mock is not affiliated with, endorsed by, or supported
+by Checkmarx. See the project's [license and third-party notices](../THIRD_PARTY_NOTICES.md).
+
 This folder provides an account-free HTTP test backend for the application's
 `cx scan create --project-name PROJECT --branch BRANCH -s SOURCE --scan-types TYPES`
 workflow. It runs **WireMock's official standalone image**, pinned by version

@@ -1,4 +1,7 @@
-# Kubernetes Checkmarx Operator
+# Unofficial Kubernetes operator for Checkmarx One
+
+This is an independent project, not affiliated with, endorsed by, or supported by
+Checkmarx. Checkmarx product names are used to describe compatibility.
 
 A Kubernetes operator that runs Checkmarx One scans through CLI Jobs in a dedicated namespace.
 
@@ -44,7 +47,16 @@ kubectl --context kind-asterius-local -n checkmarx-operator rollout status deplo
 
 ## Use Checkmarx One
 
-1. Download an official Linux CLI release, verify its checksum and place the executable at `runner/cx`.
+1. Download the pinned official Linux x64 CLI and prepare its license notices:
+
+   ```sh
+   python3 api-mock/scripts/download-cli.py --output-dir runner
+   ```
+
+   The downloader verifies the archive and accompanying notices against recorded
+   checksums. Both runner images include the notices at
+   `/usr/share/licenses/checkmarx-cli/`. When upgrading the CLI, update the pinned
+   release, checksums and applicable notices together.
 2. Build and push a runner image:
 
    ```sh
@@ -100,3 +112,16 @@ Run the offline tests with Python 3; no additional dependencies are needed:
 ```sh
 make test
 ```
+
+## License and permitted use
+
+Original project code is licensed under [Apache 2.0](LICENSE). Vendored Checkmarx
+files retain their upstream license and notices; see
+[third-party notices](THIRD_PARTY_NOTICES.md).
+
+The local mock returns synthetic results and grants no access to Checkmarx One.
+Real scans require appropriate Checkmarx subscriptions and API permissions under
+the user's applicable agreement. Publishing this integration grants no right to
+resell Checkmarx services, share credentials, or scan third-party material.
+Users must have permission to process and upload the repositories, workload
+configuration and images they submit, including any confidential or personal data.

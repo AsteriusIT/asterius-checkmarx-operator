@@ -1,5 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /app
+COPY LICENSE THIRD_PARTY_NOTICES.md /usr/share/licenses/checkmarx-operator/
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY operator_src operator_src

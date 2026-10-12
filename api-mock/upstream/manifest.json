@@ -165,7 +165,8 @@
     "internal/wrappers/uploads-http.go": "387fd86f998a5b09584cb01dc98032624e35c29142e0d04b0157d217e5779e79",
     "internal/wrappers/uploads.go": "6ba893137d2bcb32d68a3c01a61266fa18edffbcb9ebea57ca3f7e0795d833d3",
     "internal/wrappers/utils/utils.go": "134103c89ee304235b77f6e795ea7dc2a5dce813f8b5fdca4ab8fb2d20818583",
-    "internal/wrappers/utils/utils_test.go": "caf98097d07be5c8bf03f3d3865f83776cf42a21101d23071b98609c7c1a69f4"
+    "internal/wrappers/utils/utils_test.go": "caf98097d07be5c8bf03f3d3865f83776cf42a21101d23071b98609c7c1a69f4",
+    "licenses/github.com_alexbrainman_sspi_LICENSE": "5a887863186a45370391191a36aef27e45bd6f91c5957b48df40ff193471f495"
   },
   "api_reference": {
     "url": "https://checkmarx.stoplight.io/docs/checkmarx-one-api-reference-guide",
