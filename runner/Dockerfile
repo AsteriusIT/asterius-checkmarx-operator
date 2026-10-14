@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY cx /usr/local/bin/cx
 RUN chmod 0555 /usr/local/bin/cx
 COPY legal/ /usr/share/licenses/checkmarx-cli/
-ENV HOME=/tmp
+ENV HOME=/tmp USER=cx
 WORKDIR /tmp
 USER 10001
 ENTRYPOINT ["cx"]

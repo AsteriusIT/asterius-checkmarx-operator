@@ -2,7 +2,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 context=kind-asterius-local
-cluster=asterius-local
 python3 scripts/generate.py
 python3 scripts/generate-ui.py
 # Namespace first, then ConfigMaps before either Deployment starts.
@@ -23,10 +22,7 @@ printf '\nAPI UI: https://checkmarx-mock.asterius.local/\n'
 if [[ "${1:-}" != "--with-cli-smoke" ]]; then
   exit 0
 fi
-# Optional real CLI test runner; the mock and UI need no custom image builds.
-python3 scripts/download-cli.py
-docker build -t checkmarx-real-cli:2.3.67 -f runner.Dockerfile .cache
-kind load docker-image --name "$cluster" checkmarx-real-cli:2.3.67
+# Optional smoke Job uses the official CLI image directly.
 kubectl --context "$context" apply -f <(python3 - <<'PY'
 from pathlib import Path
 s=Path('k8s/cli-smoke.yaml').read_text()

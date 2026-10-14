@@ -78,8 +78,8 @@ admin API for inspection/reset. Use only the supplied dummy credentials.
 response schemas. It is generated from the local fixtures and is not an official
 Checkmarx OpenAPI export. The other vendored API contracts remain reference files.
 
-To also build/run the optional real CLI smoke Job (Linux amd64; Docker and kind
-required for this runner only):
+To also run the optional real CLI smoke Job using the pinned official
+`checkmarx/ast-cli` image:
 
 ```sh
 bash api-mock/scripts/deploy-local.sh --with-cli-smoke
@@ -97,8 +97,8 @@ python3 api-mock/scripts/smoke.py --evidence api-mock/evidence/kubernetes-smoke.
 For other clusters, create `checkmarx-mock` first, then apply `k8s/configmaps.json`,
 `k8s/install.yaml`, `k8s/ui.yaml` and `k8s/ingress.yaml`. Adjust ingress hosts,
 class and TLS to match that cluster. There are no mock/UI images to build or push.
-`runner.Dockerfile` remains only for the optional real CLI Job: it packages the
-verified executable separately from the mock server.
+The CLI smoke Job pulls the official CLI image directly; no custom runner build
+or kind image load is needed. `runner.Dockerfile` remains available for custom images.
 
 ## Run locally with Docker
 
@@ -175,8 +175,8 @@ curl -fsS -X POST http://127.0.0.1:18080/__admin/reset
 
 ## Connect this application's operator
 
-For operator tests, build its runner using the verified CLI, set `CX_CLI_IMAGE`
-to `checkmarx-real-cli:2.3.67`, and configure each CR's `spec.credentialsSecretRef` to a Secret
+For operator tests, use the pinned official CLI image configured in `CX_CLI_IMAGE`,
+and configure each CR's `spec.credentialsSecretRef` to a Secret
 **in the operator's scan namespace** with the five dummy variables above.
 For cross-namespace access, use
 `http://checkmarx-api-mock.checkmarx-mock.svc.cluster.local:8080` for both base URIs.

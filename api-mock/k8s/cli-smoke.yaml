@@ -17,8 +17,14 @@ spec:
         fsGroup: 10001
       containers:
         - name: cx
-          image: checkmarx-real-cli:2.3.67
+          image: docker.io/checkmarx/ast-cli:2.3.67@sha256:f9aece17f331c36cb6c5895d4c29c652f7a624c0f8256afefbc2420cf9d2be0e
           imagePullPolicy: IfNotPresent
+          workingDir: /tmp
+          env:
+            - name: HOME
+              value: /tmp
+            - name: USER
+              value: cx
           args:
             - scan
             - create

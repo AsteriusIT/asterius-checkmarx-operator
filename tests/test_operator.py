@@ -27,7 +27,10 @@ class PlannerTests(unittest.TestCase):
     def test_no_shell_or_secret_contents(self):
         b=copy.deepcopy(BODY); b['spec']['projectName']='demo; touch /tmp/attack'
         job=plan(b,IMAGE)[3]; c=job['spec']['template']['spec']['containers'][0]
-        self.assertEqual(c['command'],['cx'])
+        self.assertNotIn('command', c)
+        self.assertEqual(c['workingDir'], '/tmp')
+        self.assertIn({'name': 'HOME', 'value': '/tmp'}, c['env'])
+        self.assertIn({'name': 'USER', 'value': 'cx'}, c['env'])
         self.assertIn(b['spec']['projectName'],c['args'])
         self.assertEqual(c['envFrom'][0]['secretRef']['name'],'auth')
         self.assertEqual(job['spec']['backoffLimit'],0)

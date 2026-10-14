@@ -137,7 +137,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: CX_CLI_IMAGE
-          value: REPLACE_WITH_TESTED_CLI_IMAGE_TAG_OR_DIGEST
+          value: docker.io/checkmarx/ast-cli:2.3.67@sha256:f9aece17f331c36cb6c5895d4c29c652f7a624c0f8256afefbc2420cf9d2be0e
         - name: PYTHONPATH
           value: /app
         - name: OPERATOR_NAMESPACE

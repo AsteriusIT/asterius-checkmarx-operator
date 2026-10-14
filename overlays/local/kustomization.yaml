@@ -3,14 +3,6 @@ kind: Kustomization
 namespace: checkmarx-operator
 resources:
   - ../../config
-patches:
-  - target:
-      kind: Deployment
-      name: checkmarx-operator
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/0/value
-        value: checkmarx-real-cli:2.3.67
 # Dummy credentials for the local API mock only.
 secretGenerator:
   - name: checkmarx-auth

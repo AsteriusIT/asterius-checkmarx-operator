@@ -96,9 +96,9 @@ def plan(body, image, workload=None):
             "--scan-types", ",".join(spec["scanTypes"])]
     if image_ref:
         args.extend(["--container-images", image_ref])
-    container = {"name": "scan", "image": image, "command": ["cx"], "args": args,
+    container = {"name": "scan", "image": image, "args": args, "workingDir": "/tmp",
                  "envFrom": [{"secretRef": {"name": spec["credentialsSecretRef"]}}],
-                 "env": [{"name": "HOME", "value": "/tmp"}],
+                 "env": [{"name": "HOME", "value": "/tmp"}, {"name": "USER", "value": "cx"}],
                  "resources": {"requests": {"cpu": "100m", "memory": "256Mi"},
                                "limits": {"cpu": "1", "memory": "1Gi"}},
                  "securityContext": {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True,

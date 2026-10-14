@@ -43,33 +43,29 @@ For `kind-asterius-local` with the API mock already running, use the local confi
 
 ```sh
 docker build -t checkmarx-operator:dev .
-kind load docker-image --name asterius-local checkmarx-operator:dev checkmarx-real-cli:2.3.67
+kind load docker-image --name asterius-local checkmarx-operator:dev
 kubectl --context kind-asterius-local apply -k overlays/local
 kubectl --context kind-asterius-local -n checkmarx-operator rollout status deployment/checkmarx-operator
 ```
 
 ## Use Checkmarx One
 
-1. Download the pinned official Linux x64 CLI and prepare its license notices:
+The installation manifest uses the official [`checkmarx/ast-cli`](https://hub.docker.com/r/checkmarx/ast-cli)
+image at version `2.3.67`, pinned by digest. No custom runner build or push is needed.
+Scan Jobs use the image entrypoint, run as UID 10001 with a read-only root filesystem,
+and use `/tmp` for their working directory and home.
 
-   ```sh
-   python3 api-mock/scripts/download-cli.py --output-dir runner
-   ```
+1. Keep the default `CX_CLI_IMAGE` in `config/install.yaml`, or set it to another
+   tested version and digest. Reapply the installation manifest after changes.
+2. Replace the mock Secret with your integration credentials: `CX_APIKEY`,
+   `CX_BASE_URI`, `CX_BASE_AUTH_URI` and `CX_TENANT`. OAuth client credentials
+   (`CX_CLIENT_ID`, `CX_CLIENT_SECRET`) are also supported. Keep credentials out of Git.
+3. Verify network access, project permissions and scanner licensing, then submit
+   an example scan and inspect its Job logs and results in Checkmarx.
 
-   The downloader verifies the archive and accompanying notices against recorded
-   checksums. Both runner images include the notices at
-   `/usr/share/licenses/checkmarx-cli/`. When upgrading the CLI, update the pinned
-   release, checksums and applicable notices together.
-2. Build and push a runner image:
-
-   ```sh
-   docker build -t YOUR_REGISTRY/checkmarx-runner:YOUR_VERSION runner/
-   docker push YOUR_REGISTRY/checkmarx-runner:YOUR_VERSION
-   ```
-
-3. Set `CX_CLI_IMAGE` in the installation manifest to the runner image, preferably pinned by digest, and reapply it.
-4. Replace the mock Secret with your integration credentials: `CX_APIKEY`, `CX_BASE_URI`, `CX_BASE_AUTH_URI` and `CX_TENANT`. OAuth client credentials (`CX_CLIENT_ID`, `CX_CLIENT_SECRET`) are also supported. Keep credentials out of Git.
-5. Verify network access, project permissions and scanner licensing, then submit an example scan and inspect its Job logs and results in Checkmarx.
+The `runner/` Dockerfile is optional for deployments requiring a customized CLI
+image (for example, additional CA certificates). Custom images must expose the CLI
+through their entrypoint. The downloader remains available for host-based API mock tests.
 
 ## Scan behavior
 
