@@ -1,0 +1,5 @@
+{
+  "ksv0125": {
+    "trusted_registries": ["docker.io"]
+  }
+}

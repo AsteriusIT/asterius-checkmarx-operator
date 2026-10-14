@@ -8,7 +8,11 @@ This folder provides an account-free HTTP test backend for the application's
 workflow. It runs **WireMock's official standalone image**, pinned by version
 and digest, with mappings mounted from a Kubernetes ConfigMap. No custom mock image
 or Docker build is needed. Swagger UI uses its official image with an OpenAPI
-ConfigMap. `scripts/generate-ui.py` packages both ConfigMaps in `k8s/configmaps.json`. It supports the unmodified official **Checkmarx CLI 2.3.67**.
+ConfigMap. `scripts/generate-ui.py` packages the mappings and OpenAPI ConfigMaps
+in `k8s/configmaps.json`; `k8s/ui.yaml` includes the UI's static Nginx configuration.
+The UI serves immutable assets as UID 10001 with a read-only root filesystem and
+all capabilities dropped. External Swagger validation is disabled.
+It supports the unmodified official **Checkmarx CLI 2.3.67**.
 All results are synthetic. No SAST, SCA or IaC analysis occurs, and no Checkmarx
 account, license or service is contacted. Repository URLs are accepted as test
 data; the mock does not clone them. Local sources are ZIP-uploaded to the mock.

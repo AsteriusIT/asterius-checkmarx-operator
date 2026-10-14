@@ -82,7 +82,12 @@ Keep completed Jobs while their scan resources exist: deleting a Job can trigger
 
 Individual scan resources and scanner Jobs stay in `checkmarx-operator`. Cluster discovery has read access to Pods across namespaces. To change the execution namespace, update the manifests, credential references and Kopf namespace argument together.
 
-Workload snapshots redact literal container environment values, but other inline fields can still contain sensitive data. Use Secret references and review manifests before scanning.
+Workload snapshots redact literal environment values, commands, arguments,
+probe HTTP header values, and annotations, including nested Pod templates and
+init containers. Structural security settings and Secret references are retained
+for IaC analysis. Redacted command text cannot be analyzed. Other inline fields
+can still contain sensitive data; use Secret references and review manifests
+before scanning.
 
 ## Automatic cluster image scans
 
@@ -198,9 +203,15 @@ redacts detected secret values. No images are published by CI.
 
 Security fails on any HIGH/CRITICAL Trivy finding (including findings without
 fixes), HIGH Bandit finding, detected secret, scanner error, or missing required
-report. Lower-severity findings remain visible without blocking. Existing
-configuration findings in the operator manifest, mock UI, examples, and fixtures
-currently fail this gate; they are not suppressed. These checks do not detect
+report. Lower-severity findings remain visible without blocking. One exact
+KSV-0109 false positive is reviewed in `scripts/security-report.py`: the embedded
+sample's `automountServiceAccountToken: false` setting is not a secret. Its raw
+finding remains in JSON and the review appears in the summary; additional
+suspected secrets still block CI. `.trivy/registries.json` explicitly trusts
+Docker Hub, the registry used by the digest-pinned vendor images. Remaining
+medium findings cover required namespace-local Job/ConfigMap creation; remaining
+low findings concern Docker HEALTHCHECK instructions. Kubernetes
+manifests control health probes for deployed services. These checks do not detect
 every application-level risk, including the documented limits of snapshot
 redaction.
 

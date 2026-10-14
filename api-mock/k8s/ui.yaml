@@ -14,17 +14,22 @@ spec:
         app: checkmarx-api-ui
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: swagger-ui
-          image: swaggerapi/swagger-ui:v5.33.2@sha256:1f00ef02fcd0e4294657963cbc933202d644dc56f8d72ca5fdc35bfaa80c240e
+          image: docker.io/swaggerapi/swagger-ui:v5.33.2@sha256:1f00ef02fcd0e4294657963cbc933202d644dc56f8d72ca5fdc35bfaa80c240e
+          # Serve the immutable UI assets without the image's root startup scripts.
+          command: [nginx]
+          args: [-c, /ui-config/nginx.conf, -g, "daemon off;"]
           ports:
             - name: http
               containerPort: 8080
-          env:
-            - name: SWAGGER_JSON_URL
-              value: /openapi.json
-            - name: VALIDATOR_URL
-              value: none
           resources:
             requests:
               cpu: 25m
@@ -34,9 +39,9 @@ spec:
               memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
-              add: [CHOWN, SETUID, SETGID]
           readinessProbe:
             httpGet:
               path: /openapi.json
@@ -46,10 +51,68 @@ spec:
               mountPath: /usr/share/nginx/html/openapi.json
               subPath: openapi.json
               readOnly: true
+            - name: ui-config
+              mountPath: /ui-config
+              readOnly: true
+            - name: ui-config
+              mountPath: /usr/share/nginx/html/swagger-initializer.js
+              subPath: swagger-initializer.js
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: openapi
           configMap:
             name: checkmarx-mock-openapi
+        - name: ui-config
+          configMap:
+            name: checkmarx-mock-ui-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: checkmarx-mock-ui-config
+  namespace: checkmarx-mock
+data:
+  nginx.conf: |
+    worker_processes auto;
+    pid /tmp/nginx.pid;
+    error_log /dev/stderr warn;
+    events { worker_connections 1024; }
+    http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+      access_log /dev/stdout;
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path /tmp/proxy_temp;
+      fastcgi_temp_path /tmp/fastcgi_temp;
+      uwsgi_temp_path /tmp/uwsgi_temp;
+      scgi_temp_path /tmp/scgi_temp;
+      server {
+        listen 8080;
+        server_tokens off;
+        root /usr/share/nginx/html;
+        index index.html;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        location / { try_files $uri $uri/ =404; }
+      }
+    }
+  swagger-initializer.js: |
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: "/openapi.json",
+        validatorUrl: null,
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+        layout: "StandaloneLayout"
+      });
+    };
 ---
 apiVersion: v1
 kind: Service

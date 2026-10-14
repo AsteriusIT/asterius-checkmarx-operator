@@ -49,14 +49,23 @@ def validate(spec):
 
 def snapshot(workload):
     # Deliberately retain only identity and spec; never status or annotations.
-    # Literal environment values are redacted; Secret references remain references.
+    # Free-form executable text and inline values can contain credentials.
+    # Secret references and structural security settings remain available to IaC.
     obj = {"apiVersion": workload["apiVersion"], "kind": workload["kind"],
            "metadata": {k: workload["metadata"][k] for k in ("name", "namespace") if k in workload["metadata"]},
            "spec": copy.deepcopy(workload["spec"])}
     def redact(value):
         if isinstance(value, dict):
             for key, item in value.items():
-                if key == "env" and isinstance(item, list):
+                if key == "annotations" and isinstance(item, dict):
+                    value[key] = {}
+                elif key in ("command", "args") and isinstance(item, list):
+                    value[key] = ["REDACTED"] * len(item)
+                elif key == "httpHeaders" and isinstance(item, list):
+                    for header in item:
+                        if isinstance(header, dict) and "value" in header:
+                            header["value"] = "REDACTED"
+                elif key == "env" and isinstance(item, list):
                     for env in item:
                         if "value" in env:
                             env["value"] = "REDACTED"
@@ -105,7 +114,7 @@ def plan(body, image, workload=None):
                                      "capabilities": {"drop": ["ALL"]}},
                  "volumeMounts": [{"name": "tmp", "mountPath": "/tmp"}]}
     pod = {"restartPolicy": "Never", "automountServiceAccountToken": False,
-           "securityContext": {"runAsNonRoot": True, "runAsUser": 10001, "fsGroup": 10001,
+           "securityContext": {"runAsNonRoot": True, "runAsUser": 10001, "runAsGroup": 10001, "fsGroup": 10001,
                                "seccompProfile": {"type": "RuntimeDefault"}},
            "containers": [container], "volumes": [{"name": "tmp", "emptyDir": {"sizeLimit": "2Gi"}}]}
     cm = None

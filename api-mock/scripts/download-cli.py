@@ -6,8 +6,8 @@ import io
 import json
 import os
 import tarfile
-import urllib.request
 from pathlib import Path
+from http_client import open_http
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
@@ -16,7 +16,7 @@ parser.add_argument("--output-dir", type=Path, default=root / ".cache",
 args = parser.parse_args()
 manifest = json.loads((root / "upstream/manifest.json").read_text())
 release = manifest["cli_archive"]
-with urllib.request.urlopen(release["url"], timeout=60) as response:
+with open_http(release["url"], timeout=60) as response:
     archive = response.read()
 if hashlib.sha256(archive).hexdigest() != release["sha256"]:
     raise SystemExit("Official CLI archive checksum mismatch")

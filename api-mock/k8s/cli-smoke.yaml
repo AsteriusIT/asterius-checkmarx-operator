@@ -15,6 +15,8 @@ spec:
         runAsUser: 10001
         runAsGroup: 10001
         fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: cx
           image: docker.io/checkmarx/ast-cli:2.3.67@sha256:f9aece17f331c36cb6c5895d4c29c652f7a624c0f8256afefbc2420cf9d2be0e
@@ -77,14 +79,41 @@ data:
     kind: Deployment
     metadata:
       name: mock-input
+      namespace: checkmarx-mock
     spec:
-      replicas: 1
       selector:
         matchLabels: {app: mock-input}
       template:
         metadata:
           labels: {app: mock-input}
         spec:
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: app
-              image: nginx:1.27
+              image: docker.io/nginxinc/nginx-unprivileged:1.31.6-alpine@sha256:884e0b7f42f303641b0f4e78755aea647521dca0b89ca3be7992ad78b5c07434
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 250m
+                  memory: 128Mi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 32Mi

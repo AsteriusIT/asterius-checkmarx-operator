@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p reports
           docker run --rm -v "$PWD:/work" -w /work "$TRIVY_IMAGE" fs \
-            --scanners vuln,misconfig --skip-dirs .git --skip-dirs reports \
+            --scanners vuln,misconfig --config-data .trivy --skip-dirs .git --skip-dirs reports \
             --skip-dirs api-mock/.cache --skip-dirs runner/legal \
             --format json --output reports/trivy-fs.json .
       - name: Secrets in working tree (redacted)
@@ -82,7 +82,8 @@ jobs:
           mkdir -p reports
           docker run --rm --read-only --tmpfs /tmp checkmarx-operator:ci --help 2>&1 | tee reports/entrypoint.txt
           docker run --rm --read-only --tmpfs /tmp --entrypoint python \
-            -v "$PWD/tests:/app/tests:ro" -v "$PWD/scripts:/app/scripts:ro" checkmarx-operator:ci \
+            -v "$PWD/tests:/app/tests:ro" -v "$PWD/scripts:/app/scripts:ro" \
+            -v "$PWD/api-mock/scripts:/app/api-mock/scripts:ro" checkmarx-operator:ci \
             -m unittest discover -s tests -v 2>&1 | tee reports/container-tests.txt
           docker run --rm --read-only --tmpfs /tmp --entrypoint python checkmarx-operator:ci \
             -c 'import os, importlib.util; import operator_src.handlers, ssl, aiohttp, cryptography, yaml; assert os.getuid() == 10001; assert importlib.util.find_spec("pip") is None; assert importlib.util.find_spec("ensurepip") is None'

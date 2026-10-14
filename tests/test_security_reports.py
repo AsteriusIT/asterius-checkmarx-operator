@@ -53,3 +53,31 @@ class SecurityReportTests(unittest.TestCase):
             summary, failed = summarize("repository", directory)
             self.assertTrue(failed)
             self.assertIn("| bandit.json | Missing or invalid report | FAIL |", summary)
+
+    def test_only_exact_boolean_configmap_false_positive_is_nonblocking(self):
+        finding = {"ID": "KSV-0109", "Severity": "HIGH", "Message":
+            "ConfigMap 'checkmarx-mock-source' in 'checkmarx-mock' namespace stores secrets in key(s) or value(s) "
+            "'{\"      automountServiceAccountToken\"}'"}
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            report = directory / "trivy-image.json"
+            source = directory / 'api-mock/k8s/cli-smoke.yaml'
+            source.parent.mkdir(parents=True)
+            source.write_text('      automountServiceAccountToken: false\n')
+            for target, message, blocked in [
+                ('api-mock/k8s/cli-smoke.yaml', finding['Message'], False),
+                ('another.yaml', finding['Message'], True),
+                ('api-mock/k8s/cli-smoke.yaml', finding['Message'] + ', password', True),
+            ]:
+                item = dict(finding, Message=message)
+                report.write_text(json.dumps({'Results': [{'Target': target,
+                    'Misconfigurations': [item]}]}))
+                summary, failed = summarize('image', directory, source_root=directory)
+                self.assertEqual(failed, blocked)
+                if not blocked:
+                    self.assertIn('The original finding remains in the JSON report.', summary)
+                    self.assertIn('| trivy-image.json | 1 | 0 |', summary)
+            report.write_text(json.dumps({'Results': [{'Target': 'api-mock/k8s/cli-smoke.yaml',
+                'Misconfigurations': [finding]}]}))
+            source.write_text('      automountServiceAccountToken: credential-value\n')
+            self.assertTrue(summarize('image', directory, source_root=directory)[1])

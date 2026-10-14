@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import urllib.error
 import urllib.request
+from http_client import open_http, validate_url
 
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
@@ -19,12 +20,13 @@ parser.add_argument("--cx", default=str(ROOT / ".cache/cx"))
 parser.add_argument("--evidence", type=Path)
 args = parser.parse_args()
 base = args.url.rstrip("/")
+validate_url(base, ("http", "https"))
 cx = str(Path(args.cx).resolve())
 
 def api(path, data=None, method=None):
     request = urllib.request.Request(base + path, data=None if data is None else json.dumps(data).encode(),
                                      method=method, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(request, timeout=10) as response:
+    with open_http(request, timeout=10, schemes=("http", "https")) as response:
         body = response.read()
         return json.loads(body) if body else None
 

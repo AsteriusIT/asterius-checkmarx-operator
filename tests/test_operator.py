@@ -1,5 +1,6 @@
 import copy
 import importlib
+import json
 import sys
 import types
 import unittest
@@ -51,6 +52,30 @@ class PlannerTests(unittest.TestCase):
         self.assertNotIn('sensitive',result); self.assertNotIn('annotations',result)
         self.assertNotIn('status',result); self.assertIn('app-secret',result)
         self.assertIn('sensitive',str(WORKLOAD))
+    def test_snapshot_redacts_nested_executable_text_and_headers(self):
+        workload = copy.deepcopy(WORKLOAD)
+        pod = workload['spec']['template']
+        pod['metadata'] = {'annotations': {'auth': 'annotation-secret'}}
+        container = pod['spec']['containers'][0]
+        container.update(command=['command-secret'], args=['argument-secret'],
+            securityContext={'readOnlyRootFilesystem': False},
+            livenessProbe={'httpGet': {'path': '/health', 'port': 8080,
+                'httpHeaders': [{'name': 'Authorization', 'value': 'header-secret'}]}},
+            lifecycle={'postStart': {'exec': {'command': ['hook-secret']}}})
+        pod['spec']['initContainers'] = [{'name': 'init', 'image': 'example:1',
+                                         'args': ['init-secret']}]
+        cronjob = {'apiVersion': 'batch/v1', 'kind': 'CronJob',
+            'metadata': workload['metadata'], 'spec': {'jobTemplate': {'spec': workload['spec']}}}
+        before = copy.deepcopy(cronjob)
+        result = snapshot(cronjob)
+        for secret in ('annotation-secret', 'command-secret', 'argument-secret',
+                       'header-secret', 'hook-secret', 'init-secret', 'sensitive'):
+            self.assertNotIn(secret, result)
+        self.assertEqual(cronjob, before)
+        data = json.loads(result)['spec']['jobTemplate']['spec']['template']['spec']
+        self.assertFalse(data['containers'][0]['securityContext']['readOnlyRootFilesystem'])
+        self.assertEqual(data['containers'][0]['livenessProbe']['httpGet']['port'], 8080)
+        self.assertIn('app-secret', result)
     def test_workload_identity_tracks_spec_not_status(self):
         b=copy.deepcopy(BODY); del b['spec']['repository']
         b['spec'].update(workloadRef={'kind':'Deployment','name':'demo'},scanTypes=['iac-security'])
