@@ -1,0 +1,110 @@
+name: Security
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+
+env:
+  # Versioned scanner images pinned to their Linux amd64 manifests.
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.76.0@sha256:166061a4a15c64a94a3aab430659e2c166dc0815fbc54a222c6d56d64132f552
+  GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install Bandit
+        run: |
+          mkdir -p reports
+          python -m pip install bandit==1.9.4
+      - name: Python code scan (all severities)
+        run: bandit -r operator_src api-mock/scripts scripts tests --exit-zero -f json -o reports/bandit.json
+      - name: Dependencies and configuration (all severities)
+        if: always()
+        run: |
+          mkdir -p reports
+          docker run --rm -v "$PWD:/work" -w /work "$TRIVY_IMAGE" fs \
+            --scanners vuln,misconfig --skip-dirs .git --skip-dirs reports \
+            --skip-dirs api-mock/.cache --skip-dirs runner/legal \
+            --format json --output reports/trivy-fs.json .
+      - name: Secrets in working tree (redacted)
+        if: always()
+        run: |
+          mkdir -p reports
+          docker run --rm -v "$PWD:/work" -w /work "$GITLEAKS_IMAGE" dir /work \
+            --config /work/.gitleaks.toml --redact=100 --exit-code 0 \
+            --report-format json --report-path /work/reports/gitleaks-dir.json
+      - name: Secrets in Git history (redacted)
+        if: always()
+        run: |
+          mkdir -p reports
+          docker run --rm -v "$PWD:/work" -w /work "$GITLEAKS_IMAGE" git /work \
+            --config /work/.gitleaks.toml --redact=100 --exit-code 0 \
+            --report-format json --report-path /work/reports/gitleaks-git.json
+      - name: Summarize reports and enforce security thresholds
+        if: always()
+        run: python scripts/security-report.py repository reports
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: repository-security-reports
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30
+
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build operator image
+        run: docker build --pull --no-cache -t checkmarx-operator:ci .
+      - name: Test image with read-only filesystem and non-root user
+        shell: bash
+        run: |
+          mkdir -p reports
+          docker run --rm --read-only --tmpfs /tmp checkmarx-operator:ci --help 2>&1 | tee reports/entrypoint.txt
+          docker run --rm --read-only --tmpfs /tmp --entrypoint python \
+            -v "$PWD/tests:/app/tests:ro" -v "$PWD/scripts:/app/scripts:ro" checkmarx-operator:ci \
+            -m unittest discover -s tests -v 2>&1 | tee reports/container-tests.txt
+          docker run --rm --read-only --tmpfs /tmp --entrypoint python checkmarx-operator:ci \
+            -c 'import os, importlib.util; import operator_src.handlers, ssl, aiohttp, cryptography, yaml; assert os.getuid() == 10001; assert importlib.util.find_spec("pip") is None; assert importlib.util.find_spec("ensurepip") is None'
+      - name: Scan complete runtime dependencies (all severities)
+        run: |
+          mkdir -p reports
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/reports:/reports" "$TRIVY_IMAGE" image --image-src docker \
+            --scanners vuln --format json --output /reports/trivy-image.json checkmarx-operator:ci
+      - name: Generate image SBOM
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/reports:/reports" "$TRIVY_IMAGE" image --image-src docker \
+            --format cyclonedx --output /reports/operator.cdx.json checkmarx-operator:ci
+      - name: Summarize report and enforce security thresholds
+        if: always()
+        run: python3 scripts/security-report.py image reports
+      - name: Upload container reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: container-security-reports
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30

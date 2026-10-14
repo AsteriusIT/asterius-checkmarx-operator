@@ -1,5 +1,8 @@
 # Unofficial Kubernetes operator for Checkmarx One
 
+[![Tests](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/tests.yml/badge.svg)](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/tests.yml)
+[![Security](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/security.yml/badge.svg)](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/security.yml)
+
 This is an independent project, not affiliated with, endorsed by, or supported by
 Checkmarx. Checkmarx product names are used to describe compatibility.
 
@@ -160,6 +163,50 @@ Run the offline tests with Python 3; no additional dependencies are needed:
 ```sh
 make test
 ```
+
+Build and scan the operator with Docker and Trivy installed:
+
+```sh
+make scan
+# Include findings for which the vulnerability database has no fix:
+trivy image --image-src docker --scanners vuln checkmarx-operator:dev
+```
+
+`make scan` fails if any vulnerability has an available fix, at any severity.
+It does not gate vulnerabilities without an available fix. Override the local
+image tag with `IMAGE=checkmarx-operator:my-tag`. To refresh OS updates even when
+the base image is unchanged, first rebuild with
+`docker build --pull --no-cache -t checkmarx-operator:dev .`.
+The runtime image omits pip and ensurepip after installing dependencies.
+Runner images need separate scans; the operator scan does not cover the CLI.
+
+### GitHub CI security reports
+
+The dynamic badges above link to the latest GitHub Actions runs. Tests run on
+pushes and pull requests; security scans also run weekly and can be started
+manually from the Actions tab. Badges become active after these workflows are
+pushed to GitHub and run.
+
+The Security workflow scans first-party Python with Bandit, declared dependencies
+and repository configuration with Trivy, and the working tree and fetched Git
+history with Gitleaks. It also builds the operator image, tests it as a non-root
+user with a read-only filesystem, scans its complete runtime dependencies, and
+generates a CycloneDX SBOM. Vendored Go snippets are not included in Python SAST;
+their integrity is checked against the upstream manifest by the Tests workflow.
+The CLI runner images are outside the operator image scan.
+
+Each run publishes a security summary in its job summary and downloadable
+`repository-security-reports`, `container-security-reports`, and `test-reports`
+artifacts, retained for 30 days. Reports include all severities; Gitleaks output
+redacts detected secret values. No images are published by CI.
+
+Security fails on any HIGH/CRITICAL Trivy finding (including findings without
+fixes), HIGH Bandit finding, detected secret, scanner error, or missing required
+report. Lower-severity findings remain visible without blocking. Existing
+configuration findings in the operator manifest, mock UI, examples, and fixtures
+currently fail this gate; they are not suppressed. These checks do not detect
+every application-level risk, including the documented limits of snapshot
+redaction.
 
 ## License and permitted use
 

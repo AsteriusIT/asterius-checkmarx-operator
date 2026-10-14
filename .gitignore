@@ -36,6 +36,7 @@ coverage.xml
 /runner/cx
 /runner/legal/
 /api-mock/evidence/
+/reports/
 
 # Editor and operating system files
 .idea/
