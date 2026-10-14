@@ -14,10 +14,20 @@ import urllib.request
 from http_client import open_http, validate_url
 
 ROOT = Path(__file__).resolve().parents[1]
+REQUESTS_PATH = "/__admin/requests"
+SOURCE_FIXTURE = "fixtures/source"
+def evidence_path(value):
+    path = Path(value).resolve()
+    allowed = (ROOT / "evidence", ROOT.parent / "reports")
+    if not any(path.is_relative_to(directory) for directory in allowed):
+        raise argparse.ArgumentTypeError("Evidence must be written under api-mock/evidence/ or reports/")
+    return path
+
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--url", default="http://127.0.0.1:18080")
 parser.add_argument("--cx", default=str(ROOT / ".cache/cx"))
-parser.add_argument("--evidence", type=Path)
+parser.add_argument("--evidence", type=evidence_path)
 args = parser.parse_args()
 base = args.url.rstrip("/")
 validate_url(base, ("http", "https"))
@@ -50,7 +60,7 @@ def run(source, engines="sast,sca,iac-security", secret="mock-secret", expect=0,
         return result
 
 def journal():
-    entries = api("/__admin/requests")["requests"]
+    entries = api(REQUESTS_PATH)["requests"]
     assert not api("/__admin/requests/unmatched")["requests"], "Unmatched HTTP requests"
     assert all(e.get("stubMapping", {}).get("name") != "unauthorized-or-unimplemented" for e in entries), \
         "CLI used an unimplemented endpoint"
@@ -62,7 +72,7 @@ def journal():
 results = {"cli_version": subprocess.check_output([cx, "version"], text=True).strip(), "cases": []}
 try:
     for name, source, engines in [("repository", "https://github.com/Checkmarx/ast-cli", "sast,sca,iac-security"),
-                                   ("local-directory", str(ROOT / "fixtures/source"), "iac-security")]:
+                                   ("local-directory", str(ROOT / SOURCE_FIXTURE), "iac-security")]:
         reset()
         result = run(source, engines)
         entries = journal()
@@ -71,7 +81,7 @@ try:
         assert "scan-summary" in names or "sca-export-create" in names, names
         if name == "local-directory":
             assert "upload-url" in names and "upload" in names
-            uploads = [e for e in api("/__admin/requests")["requests"] if e["request"]["url"] == "/mock-upload/source.zip"]
+            uploads = [e for e in api(REQUESTS_PATH)["requests"] if e["request"]["url"] == "/mock-upload/source.zip"]
             assert uploads and uploads[0]["request"]["bodyAsBase64"].startswith("UEs"), "Expected ZIP upload"
         results["cases"].append({"name": name, "exit_code": result.returncode, "requests": entries})
         # Verify the CLI can reuse an existing project in the same scenario.
@@ -81,8 +91,8 @@ try:
         print(f"PASS {name}")
     reset()
     image = "docker.io/library/nginx@sha256:" + "a" * 64
-    result = run(str(ROOT / "fixtures/source"), "container-security", image=image)
-    submissions = [e for e in api("/__admin/requests")["requests"]
+    result = run(str(ROOT / SOURCE_FIXTURE), "container-security", image=image)
+    submissions = [e for e in api(REQUESTS_PATH)["requests"]
                    if e["request"]["method"] == "POST" and e["request"]["url"] == "/api/scans"]
     configs = json.loads(submissions[0]["request"]["body"])["config"]
     assert {"type": "containers", "value": {"userCustomImages": image}} in configs, configs
@@ -90,12 +100,12 @@ try:
     print("PASS container image digest submitted to container-security engine")
     reset()
     api("/__admin/mappings", json.loads((ROOT / "fixtures/failed-scan.json").read_text()), "POST")
-    failed = run(str(ROOT / "fixtures/source"), "iac-security", expect=1)
+    failed = run(str(ROOT / SOURCE_FIXTURE), "iac-security", expect=1)
     assert "scan did not complete successfully" in failed.stderr + failed.stdout
     results["cases"].append({"name": "failed-scan", "exit_code": failed.returncode, "requests": journal()})
     print("PASS failed scan produces nonzero CLI exit")
     reset()
-    rejected = run(str(ROOT / "fixtures/source"), "iac-security", secret="wrong-secret", expect=1)
+    rejected = run(str(ROOT / SOURCE_FIXTURE), "iac-security", secret="wrong-secret", expect=1)
     results["cases"].append({"name": "invalid-credentials", "exit_code": rejected.returncode, "requests": journal()})
     print("PASS invalid credentials rejected")
 finally:

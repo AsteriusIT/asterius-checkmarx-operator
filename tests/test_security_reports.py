@@ -1,15 +1,37 @@
 """Ensure CI fails closed and preserves visibility of lower-severity findings."""
 import json
+import argparse
 from pathlib import Path
 import runpy
 import tempfile
 import unittest
+from unittest.mock import patch
 
-summarize = runpy.run_path(str(Path(__file__).resolve().parents[1] /
-                              "scripts/security-report.py"))["summarize"]
+report_helpers = runpy.run_path(str(Path(__file__).resolve().parents[1] /
+                                   "scripts/security-report.py"))
+summarize = report_helpers["summarize"]
 
 
 class SecurityReportTests(unittest.TestCase):
+    def test_cli_rejects_report_path_escape_and_symlinks(self):
+        validate = report_helpers['report_directory']
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'reports').mkdir()
+            (root / 'reports/link').symlink_to(root, target_is_directory=True)
+            with patch.object(Path, 'cwd', return_value=root):
+                self.assertEqual(validate(str(root / 'reports/image')), root / 'reports/image')
+                for path in (root / 'outside', root / 'reports/../outside', root / 'reports/link/outside'):
+                    argument = str(path)
+                    with self.subTest(path=argument), self.assertRaises(argparse.ArgumentTypeError):
+                        validate(argument)
+                (root / 'reports/link').unlink()
+                (root / 'reports').rmdir()
+                (root / 'reports').symlink_to(root / 'outside', target_is_directory=True)
+                argument = str(root / 'reports/file')
+                with self.assertRaises(argparse.ArgumentTypeError):
+                    validate(argument)
+
     def test_high_without_fix_blocks_and_medium_is_visible(self):
         with tempfile.TemporaryDirectory() as folder:
             directory = Path(folder)

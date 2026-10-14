@@ -2,6 +2,8 @@
 **
 !Dockerfile
 !requirements.txt
+!requirements.lock
+!requirements-build.txt
 !LICENSE
 !THIRD_PARTY_NOTICES.md
 !operator_src/

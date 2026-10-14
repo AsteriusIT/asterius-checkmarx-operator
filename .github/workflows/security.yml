@@ -30,7 +30,7 @@ jobs:
       - name: Install Bandit
         run: |
           mkdir -p reports
-          python -m pip install bandit==1.9.4
+          python -m pip install --only-binary=:all: bandit==1.9.4
       - name: Python code scan (all severities)
         run: bandit -r operator_src api-mock/scripts scripts tests --exit-zero -f json -o reports/bandit.json
       - name: Dependencies and configuration (all severities)

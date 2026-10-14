@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/tests.yml/badge.svg)](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/tests.yml)
 [![Security](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/security.yml/badge.svg)](https://github.com/AsteriusIT/asterius-checkmarx-operator/actions/workflows/security.yml)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=AsteriusIT_asterius-checkmarx-operator&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AsteriusIT_asterius-checkmarx-operator)
 
 This is an independent project, not affiliated with, endorsed by, or supported by
 Checkmarx. Checkmarx product names are used to describe compatibility.
@@ -53,7 +54,8 @@ kubectl --context kind-asterius-local -n checkmarx-operator rollout status deplo
 The installation manifest uses the official [`checkmarx/ast-cli`](https://hub.docker.com/r/checkmarx/ast-cli)
 image at version `2.3.67`, pinned by digest. No custom runner build or push is needed.
 Scan Jobs use the image entrypoint, run as UID 10001 with a read-only root filesystem,
-and use `/tmp` for their working directory and home.
+and use a dedicated `/scratch` volume for their working directory, home, and
+temporary files.
 
 1. Keep the default `CX_CLI_IMAGE` in `config/install.yaml`, or set it to another
    tested version and digest. Reapply the installation manifest after changes.
@@ -179,6 +181,11 @@ image tag with `IMAGE=checkmarx-operator:my-tag`. To refresh OS updates even whe
 the base image is unchanged, first rebuild with
 `docker build --pull --no-cache -t checkmarx-operator:dev .`.
 The runtime image omits pip and ensurepip after installing dependencies.
+Runtime dependencies are pinned with SHA-256 hashes in `requirements.lock`.
+Binary wheels are required except for PyYAML, which currently needs a source
+build on Python 3.15/Alpine; its archive is hash-verified and its build dependencies
+are pinned in `requirements-build.txt`. Regenerate the lock with the `uv pip compile`
+command recorded at the top of the lock file, then rebuild and rescan the image.
 Runner images need separate scans; the operator scan does not cover the CLI.
 
 ### GitHub CI security reports
@@ -214,6 +221,24 @@ low findings concern Docker HEALTHCHECK instructions. Kubernetes
 manifests control health probes for deployed services. These checks do not detect
 every application-level risk, including the documented limits of snapshot
 redaction.
+
+### SonarCloud quality
+
+[SonarCloud](https://sonarcloud.io/summary/new_code?id=AsteriusIT_asterius-checkmarx-operator)
+uses Automatic Analysis for organization `asteriusit`. Keep it enabled under
+Administration > Analysis Method. SonarCloud scans pushes to the default branch
+and pull requests; the live quality-gate badge above reads its current result.
+No Sonar token or Sonar scanner in GitHub CI is required.
+
+`.sonarcloud.properties` includes project-owned code, manifests, Dockerfiles, and
+workflows, and classifies `tests/` as tests. Vendored upstream references and
+generated ConfigMaps are excluded; their integrity and secrets are checked by
+the existing workflows. Existing upstream files are kept unchanged.
+
+Automatic Analysis does not import coverage or external scanner reports. GitHub
+CI separately publishes full branch coverage in `test-reports` and enforces at
+least 80% coverage for the operator runtime. These results are independent of the
+SonarCloud badge. See the [Automatic Analysis documentation](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/automatic-analysis).
 
 ## License and permitted use
 

@@ -29,14 +29,17 @@ class PlannerTests(unittest.TestCase):
         b=copy.deepcopy(BODY); b['spec']['projectName']='demo; touch /tmp/attack'
         job=plan(b,IMAGE)[3]; c=job['spec']['template']['spec']['containers'][0]
         self.assertNotIn('command', c)
-        self.assertEqual(c['workingDir'], '/tmp')
-        self.assertIn({'name': 'HOME', 'value': '/tmp'}, c['env'])
+        self.assertEqual(c['workingDir'], '/scratch')
+        self.assertIn({'name': 'HOME', 'value': '/scratch'}, c['env'])
+        self.assertIn({'name': 'TMPDIR', 'value': '/scratch'}, c['env'])
         self.assertIn({'name': 'USER', 'value': 'cx'}, c['env'])
         self.assertIn(b['spec']['projectName'],c['args'])
         self.assertEqual(c['envFrom'][0]['secretRef']['name'],'auth')
         self.assertEqual(job['spec']['backoffLimit'],0)
         self.assertNotIn('ttlSecondsAfterFinished',job['spec'])
         self.assertFalse(job['spec']['template']['spec']['automountServiceAccountToken'])
+        self.assertEqual(c['resources']['limits']['ephemeral-storage'], '3Gi')
+        self.assertIn({'name': 'tmp', 'mountPath': '/scratch'}, c['volumeMounts'])
     def test_invalid_targets(self):
         b=copy.deepcopy(BODY); b['spec']['workloadRef']={'kind':'Deployment','name':'demo'}
         with self.assertRaises(ValueError): validate(b['spec'])
@@ -119,12 +122,14 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(read.call_count,2)
     def test_unrelated_child_blocked(self):
         obj=self.child(); obj.metadata.owner_references=[]
+        read, create = Mock(return_value=obj), Mock()
         with self.assertRaises(ValueError):
-            handlers.ensure(Mock(return_value=obj),Mock(),'ns','job',{},'uid-1')
+            handlers.ensure(read,create,'ns','job',{},'uid-1')
     def test_api_failure_not_treated_as_missing(self):
         create=Mock()
+        read = Mock(side_effect=ApiException(403))
         with self.assertRaises(ApiException):
-            handlers.ensure(Mock(side_effect=ApiException(403)),create,'ns','job',{},'uid-1')
+            handlers.ensure(read,create,'ns','job',{},'uid-1')
         create.assert_not_called()
     def test_reconcile_completed(self):
         batch=NS(read_namespaced_job=Mock(return_value=self.child()),create_namespaced_job=Mock())

@@ -43,9 +43,11 @@ spec:
             requests:
               cpu: 100m
               memory: 192Mi
+              ephemeral-storage: 64Mi
             limits:
               cpu: "1"
               memory: 512Mi
+              ephemeral-storage: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

@@ -9,6 +9,8 @@ import re
 from generate import PROJECT, SCAN, PUBLIC_BASE
 
 ROOT = Path(__file__).resolve().parents[1]
+JSON_CONTENT_TYPE = "application/json"
+OPENAPI_FILE = "openapi.json"
 UI = ROOT / "ui"
 UI.mkdir(exist_ok=True)
 spec = {
@@ -45,7 +47,7 @@ def example_body(body):
         if "$.name" in text:
             return "mock-project"
         if "baseUrl" in text:
-            return "http://checkmarx-mock.asterius.local"
+            return "https://checkmarx-mock.asterius.local"
         return "PACKAGE_ENFORCEMENT_ENABLED"
     return json.loads(re.sub(r"\{\{.*?\}\}", replace, body.replace(PUBLIC_BASE, "https://checkmarx-mock.127.0.0.1.sslip.io")))
 
@@ -58,6 +60,16 @@ def body(operation, content_type, example):
         for key, value in example.items():
             form["properties"][key]["default"] = value
 
+def operation_tag(path):
+    if path.startswith("/auth/"):
+        return "Authentication"
+    for fragment, tag in (("upload", "Uploads"), ("export", "SCA export"),
+                          ("project", "Projects"), ("scan", "Scans")):
+        if fragment in path:
+            return tag
+    return "Configuration and results"
+
+
 for file in sorted((ROOT / "mappings").glob("*.json")):
     mapping = json.loads(file.read_text())
     request = mapping["request"]
@@ -66,9 +78,7 @@ for file in sorted((ROOT / "mappings").glob("*.json")):
     path = request.get("urlPath", request.get("urlPathPattern"))
     path = path.replace(PROJECT, "{projectId}").replace(SCAN, "{scanId}").replace("[^/]+", "{name}")
     method = request["method"].lower()
-    tag = ("Authentication" if path.startswith("/auth/") else
-           "Uploads" if "upload" in path else "SCA export" if "export" in path else
-           "Projects" if "project" in path else "Scans" if "scan" in path else "Configuration and results")
+    tag = operation_tag(path)
     operation = spec["paths"].setdefault(path, {}).setdefault(method, {
         "operationId": mapping["name"], "summary": mapping["name"].replace("-", " "),
         "tags": [tag], "responses": {},
@@ -84,26 +94,26 @@ for file in sorted((ROOT / "mappings").glob("*.json")):
         operation["parameters"] = parameters
     response = mapping["response"]
     entry = operation["responses"].setdefault(str(response["status"]), {
-        "description": "Synthetic mock response", "content": {"application/json": {"examples": {}}}})
+        "description": "Synthetic mock response", "content": {JSON_CONTENT_TYPE: {"examples": {}}}})
     if "body" in response:
         example = example_body(response["body"])
-        entry["content"]["application/json"]["examples"][mapping["name"]] = {"value": example}
-        entry["content"]["application/json"]["schema"] = schema(example)
+        entry["content"][JSON_CONTENT_TYPE]["examples"][mapping["name"]] = {"value": example}
+        entry["content"][JSON_CONTENT_TYPE]["schema"] = schema(example)
 
 token = spec["paths"]["/auth/realms/mock/protocol/openid-connect/token"]["post"]
 spec["paths"]["/api/scans/{scanId}"]["get"]["summary"] = "Poll scan: Running, then Completed"
 body(token, "application/x-www-form-urlencoded", {
     "grant_type": "client_credentials", "client_id": "mock-cli", "client_secret": "mock-secret"})
-body(spec["paths"]["/api/projects"]["post"], "application/json", {"name": "mock-project", "mainBranch": "main", "tags": {}})
-body(spec["paths"]["/api/scans"]["post"], "application/json", {
+body(spec["paths"]["/api/projects"]["post"], JSON_CONTENT_TYPE, {"name": "mock-project", "mainBranch": "main", "tags": {}})
+body(spec["paths"]["/api/scans"]["post"], JSON_CONTENT_TYPE, {
     "type": "git", "project": {"id": PROJECT},
     "handler": {"repoUrl": "https://github.com/Checkmarx/ast-cli", "branch": "main"},
     "config": [{"type": "sast"}, {"type": "sca"}, {"type": "kics"}]})
-body(spec["paths"]["/api/sca/export/requests"]["post"], "application/json", {"ScanID": SCAN, "FileFormat": "Json"})
+body(spec["paths"]["/api/sca/export/requests"]["post"], JSON_CONTENT_TYPE, {"ScanID": SCAN, "FileFormat": "Json"})
 operation = spec["paths"]["/mock-upload/source.zip"]["put"]
 operation["requestBody"] = {"required": True, "content": {"application/zip": {"schema": {"type": "string", "format": "binary"}}}}
 operation = spec["paths"]["/api/configuration/project"]["patch"]
-operation["requestBody"] = {"required": True, "content": {"application/json": {
+operation["requestBody"] = {"required": True, "content": {JSON_CONTENT_TYPE: {
     "schema": {"type": "array", "items": {"type": "object"}}, "example": []}}}
 for path, method, fields in [
     ("/api/projects", "get", {"name": "mock-project"}),
@@ -120,10 +130,10 @@ for path, method, summary in [("/__admin/reset", "post", "Reset all mock scenari
                                ("/__admin/mappings", "get", "Inspect WireMock mappings")]:
     spec["paths"][path] = {method: {"operationId": path.rsplit("/", 1)[-1], "summary": summary,
         "tags": ["Mock control"], "security": [], "responses": {"200": {"description": "WireMock admin response"}}}}
-(UI / "openapi.json").write_text(json.dumps(spec, indent=2) + "\n")
+(UI / OPENAPI_FILE).write_text(json.dumps(spec, indent=2) + "\n")
 maps = {p.name: p.read_text() for p in sorted((ROOT / "mappings").glob("*.json"))}
 configmaps = {"apiVersion": "v1", "kind": "List", "items": [
     {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": name, "namespace": "checkmarx-mock"}, "data": data}
-    for name, data in [("checkmarx-mock-mappings", maps), ("checkmarx-mock-openapi", {"openapi.json": (UI / "openapi.json").read_text()})]]}
+    for name, data in [("checkmarx-mock-mappings", maps), ("checkmarx-mock-openapi", {OPENAPI_FILE: (UI / OPENAPI_FILE).read_text()})]]}
 (ROOT / "k8s/configmaps.json").write_text(json.dumps(configmaps, indent=2) + "\n")
 print(f"Generated {len(spec['paths'])} OpenAPI paths and two ConfigMaps")

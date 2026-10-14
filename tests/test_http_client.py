@@ -21,10 +21,11 @@ class HttpClientTests(unittest.TestCase):
 
     def test_https_redirect_cannot_downgrade_or_read_local_files(self):
         handler = RestrictedRedirect(("https",))
+        request = Request('https://example.com/file')
         for url in ('http://example.com/file', 'file:///etc/passwd',
                     'https://user:password@example.com/file'):
             with self.subTest(url=url), self.assertRaises(ValueError):
-                handler.redirect_request(Request('https://example.com/file'),
+                handler.redirect_request(request,
                                          None, 302, 'Found', {}, url)
         redirected = handler.redirect_request(Request('https://example.com/file'),
             None, 302, 'Found', {}, 'https://cdn.example.com/file')

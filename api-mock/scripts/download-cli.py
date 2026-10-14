@@ -34,7 +34,7 @@ with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar:
     if not member.isfile():
         raise SystemExit("CLI archive entry is not a regular file")
     target.write_bytes(tar.extractfile(member).read())
-os.chmod(target, 0o755)
+os.chmod(target, 0o500)
 for name, data in notices.items():
     destination = args.output_dir / "legal" / name
     destination.parent.mkdir(parents=True, exist_ok=True)

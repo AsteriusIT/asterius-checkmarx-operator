@@ -5,6 +5,9 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+CREATED_AT = "2026-01-01T00:00:00Z"
+PROJECTS_PATH = "/api/projects"
+SCAN_PATH = "/api/scans/"
 PROJECT = "11111111-1111-4111-8111-111111111111"
 SCAN = "22222222-2222-4222-8222-222222222222"
 PUBLIC_BASE = ("{{#if request.headers.X-Forwarded-Proto}}{{request.headers.X-Forwarded-Proto}}"
@@ -52,14 +55,14 @@ stub("flag", "GET", "/api/flags/[^/]+", {"name": "{{request.pathSegments.[2]}}",
 stub("tenant-configuration", "GET", "/api/configuration/tenant", [])
 stub("project-configuration", "GET", "/api/configuration/project/" + PROJECT, [])
 project = {"id": PROJECT, "name": "mock-project", "mainBranch": "main", "repoUrl": "",
-    "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-01T00:00:00Z",
+    "createdAt": CREATED_AT, "updatedAt": CREATED_AT,
     "groups": [], "tags": {}, "applicationIds": []}
-stub("project-search-empty", "GET", "/api/projects", {"totalCount": 0, "projects": []},
+stub("project-search-empty", "GET", PROJECTS_PATH, {"totalCount": 0, "projects": []},
      scenarioName="project", requiredScenarioState="Started")
-stub("project-create", "POST", "/api/projects", {
+stub("project-create", "POST", PROJECTS_PATH, {
     **project, "name": "{{jsonPath request.body '$.name'}}"
 }, 201, scenarioName="project", newScenarioState="Created")
-stub("project-search-existing", "GET", "/api/projects", {"totalCount": 1, "projects": [project]},
+stub("project-search-existing", "GET", PROJECTS_PATH, {"totalCount": 1, "projects": [project]},
      scenarioName="project", requiredScenarioState="Created")
 stub("project-get", "GET", "/api/projects/" + PROJECT, project)
 stub("project-configuration-update", "PATCH", "/api/configuration/project", [])
@@ -67,20 +70,20 @@ stub("upload-url", "POST", "/api/uploads", {"url": PUBLIC_BASE + "/mock-upload/s
 stub("upload", "PUT", "/mock-upload/source.zip", status=200, auth=False)
 def scan(status):
     return {"id": SCAN, "projectId": PROJECT, "projectName": "mock-project", "branch": "main",
-        "status": status, "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-01T00:01:00Z",
+        "status": status, "createdAt": CREATED_AT, "updatedAt": "2026-01-01T00:01:00Z",
         "initiator": "MOCK ONLY", "tags": {}, "engines": ["sast", "sca", "kics"],
         "metadata": {"configs": [{"type": t} for t in ["sast", "sca", "kics"]]},
         "statusDetails": [{"name": t, "status": status} for t in ["sast", "sca", "kics"]]}
 stub("scan-create", "POST", "/api/scans", scan("Queued"), 201,
      scenarioName="scan", newScenarioState="Queued")
-stub("scan-running", "GET", "/api/scans/" + SCAN, scan("Running"),
+stub("scan-running", "GET", SCAN_PATH + SCAN, scan("Running"),
      scenarioName="scan", requiredScenarioState="Queued", newScenarioState="Running")
-stub("scan-completed", "GET", "/api/scans/" + SCAN, scan("Completed"),
+stub("scan-completed", "GET", SCAN_PATH + SCAN, scan("Completed"),
      scenarioName="scan", requiredScenarioState="Running", newScenarioState="Completed")
-stub("scan-terminal", "GET", "/api/scans/" + SCAN, scan("Completed"),
+stub("scan-terminal", "GET", SCAN_PATH + SCAN, scan("Completed"),
      scenarioName="scan", requiredScenarioState="Completed")
 stub("scan-list", "GET", "/api/scans", {"totalCount": 1, "scans": [scan("Completed")]})
-stub("scan-workflow", "GET", "/api/scans/" + SCAN + "/workflow", [])
+stub("scan-workflow", "GET", SCAN_PATH + SCAN + "/workflow", [])
 stub("results", "GET", "/api/results", {"scanID": SCAN, "totalCount": 0, "results": []})
 stub("sca-export-create", "POST", "/api/sca/export/requests", {"exportId": "mock-export"}, 202)
 stub("sca-export-status", "GET", "/api/sca/export/requests", {
@@ -106,7 +109,7 @@ def main():
         (out / (mapping["name"] + ".json")).write_text(json.dumps(mapping, indent=2) + "\n")
     (ROOT / "fixtures" / "failed-scan.json").write_text(json.dumps({
         "name": "injected-failed-scan", "priority": 1,
-        "request": {"method": "GET", "urlPath": "/api/scans/" + SCAN},
+        "request": {"method": "GET", "urlPath": SCAN_PATH + SCAN},
         "response": {"status": 200, "jsonBody": scan("Failed"), "headers": {"Content-Type": "application/json"}}
     }, indent=2) + "\n")
     print(f"Generated {len(mappings)} WireMock mappings")

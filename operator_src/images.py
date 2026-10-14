@@ -17,37 +17,43 @@ def timestamp(value):
     return value.isoformat().replace("+00:00", "Z")
 
 
+def observed_containers(pod):
+    for containers, statuses in (("containers", "containerStatuses"),
+                                     ("initContainers", "initContainerStatuses"),
+                                     ("ephemeralContainers", "ephemeralContainerStatuses")):
+        observed = {s["name"]: s for s in pod.get("status", {}).get(statuses, [])}
+        for container in pod.get("spec", {}).get(containers, []):
+            yield container, observed.get(container["name"], {})
+
+
+def add_image_reference(result, pod, container, state):
+    raw = state.get("imageID", "")
+    resolved = raw.removeprefix("docker-pullable://")
+    match = IMAGE_DIGEST.fullmatch(resolved)
+    # A bare sha256 or containerd:// ID may be a local config hash.
+    image = resolved if match else ""
+    key = "sha256:" + match[2] if match else "unresolved:" + raw + ":" + container["image"]
+    entry = result.setdefault(key, {"image": image, "references": [], "referenceCount": 0})
+    if image and (not entry["image"] or image < entry["image"]):
+        entry["image"] = image
+    entry["referenceCount"] += 1
+    if len(entry["references"]) < 100:
+        entry["references"].append({"namespace": pod["metadata"]["namespace"], "pod": pod["metadata"]["name"],
+                                   "container": container["name"], "image": container["image"]})
+
+
 def inventory(pods, discovery):
     """Use runtime manifest digests, never mutable tags or local config hashes."""
     result = {}
     included = set(discovery.get("includeNamespaces", []))
     excluded = set(discovery.get("excludeNamespaces", []))
     for pod in pods:
-        meta = pod["metadata"]
-        namespace = meta["namespace"]
+        namespace = pod["metadata"]["namespace"]
         if namespace in excluded or (included and namespace not in included):
             continue
-        if pod.get("status", {}).get("phase") != "Running":
-            continue
-        for containers, statuses in (("containers", "containerStatuses"),
-                                     ("initContainers", "initContainerStatuses"),
-                                     ("ephemeralContainers", "ephemeralContainerStatuses")):
-            observed = {s["name"]: s for s in pod.get("status", {}).get(statuses, [])}
-            for container in pod.get("spec", {}).get(containers, []):
-                state = observed.get(container["name"], {})
-                raw = state.get("imageID", "")
-                resolved = raw.removeprefix("docker-pullable://")
-                match = IMAGE_DIGEST.fullmatch(resolved)
-                # A bare sha256 or containerd:// ID may be a local config hash.
-                image = resolved if match else ""
-                key = "sha256:" + match[2] if match else "unresolved:" + raw + ":" + container["image"]
-                entry = result.setdefault(key, {"image": image, "references": [], "referenceCount": 0})
-                if image and (not entry["image"] or image < entry["image"]):
-                    entry["image"] = image
-                entry["referenceCount"] += 1
-                if len(entry["references"]) < 100:
-                    entry["references"].append({"namespace": namespace, "pod": meta["name"],
-                        "container": container["name"], "image": container["image"]})
+        if pod.get("status", {}).get("phase") == "Running":
+            for container, state in observed_containers(pod):
+                add_image_reference(result, pod, container, state)
     return result
 
 

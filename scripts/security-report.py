@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Summarize scanner reports without reproducing potential secret values."""
 import argparse
-from collections import Counter
 import json
 import os
 from pathlib import Path
-import re
 
 
 def reviewed_false_positive(target, finding, source_root):
@@ -22,8 +20,56 @@ def reviewed_false_positive(target, finding, source_root):
         source = (source_root / target).read_text()
     except OSError:
         return False
-    values = re.findall(r"(?m)^\s*automountServiceAccountToken\s*:\s*([^\n]+)$", source)
-    return bool(values) and all(value.strip() == "false" for value in values)
+    values = []
+    for line in source.splitlines():
+        key, separator, value = line.strip().partition(":")
+        if separator and key == "automountServiceAccountToken":
+            values.append(value.strip())
+    return bool(values) and all(value == "false" for value in values)
+
+
+REVIEW_NOTE = ("Reviewed KSV-0109 false positive in api-mock/k8s/cli-smoke.yaml: "
+               "automountServiceAccountToken is a boolean set to false, not a secret. "
+               "The original finding remains in the JSON report.")
+
+
+def trivy_findings(data, source_root):
+    findings = []
+    blocking = 0
+    reviews = []
+    for result in data["Results"]:
+        for key in ("Vulnerabilities", "Misconfigurations", "Secrets"):
+            for finding in result.get(key, []):
+                findings.append(finding)
+                reviewed = key == "Misconfigurations" and reviewed_false_positive(
+                    result.get("Target", ""), finding, source_root)
+                if reviewed:
+                    reviews.append(REVIEW_NOTE)
+                elif finding["Severity"] in ("HIGH", "CRITICAL"):
+                    blocking += 1
+    return len(findings), blocking, reviews
+
+
+def scan_findings(name, data, source_root):
+    if name.startswith("trivy"):
+        return trivy_findings(data, source_root)
+    if name == "bandit.json":
+        if data.get("errors"):
+            raise ValueError("Bandit could not scan all files")
+        findings = data["results"]
+        return len(findings), sum(item["issue_severity"] == "HIGH" for item in findings), []
+    if not isinstance(data, list):
+        raise ValueError("Expected a Gitleaks finding list")
+    return len(data), len(data), []
+
+
+def report_row(name, directory, source_root):
+    try:
+        data = json.loads((directory / name).read_text())
+        count, blocking, reviews = scan_findings(name, data, source_root)
+        return f"| {name} | {count} | {blocking} |", blocking > 0, reviews
+    except (OSError, ValueError, KeyError, TypeError):
+        return f"| {name} | Missing or invalid report | FAIL |", True, []
 
 
 def summarize(mode, directory, source_root=None):
@@ -37,44 +83,26 @@ def summarize(mode, directory, source_root=None):
     failed = False
     reviews = []
     for name in files:
-        try:
-            data = json.loads((directory / name).read_text())
-            if name.startswith("trivy"):
-                findings = [v for r in data["Results"] for key in
-                            ("Vulnerabilities", "Misconfigurations", "Secrets") for v in r.get(key, [])]
-                counts = Counter(v["Severity"] for v in findings)
-                blocking = counts["HIGH"] + counts["CRITICAL"]
-                for result in data["Results"]:
-                    for finding in result.get("Misconfigurations", []):
-                        if reviewed_false_positive(result.get("Target", ""), finding, source_root):
-                            if finding.get("Severity") in ("HIGH", "CRITICAL"):
-                                blocking -= 1
-                            reviews.append("Reviewed KSV-0109 false positive in api-mock/k8s/cli-smoke.yaml: "
-                                           "automountServiceAccountToken is a boolean set to false, not a secret. "
-                                           "The original finding remains in the JSON report.")
-            elif name == "bandit.json":
-                findings = data["results"]
-                blocking = sum(v["issue_severity"] == "HIGH" for v in findings)
-                if data.get("errors"):
-                    raise ValueError("Bandit could not scan all files")
-            else:
-                if not isinstance(data, list):
-                    raise ValueError("Expected a Gitleaks finding list")
-                findings = data
-                blocking = len(findings)
-            lines.append(f"| {name} | {len(findings)} | {blocking} |")
-            failed |= blocking > 0
-        except (OSError, ValueError, KeyError, TypeError):
-            lines.append(f"| {name} | Missing or invalid report | FAIL |")
-            failed = True
+        row, blocked, reviewed = report_row(name, directory, source_root)
+        lines.append(row)
+        failed |= blocked
+        reviews.extend(reviewed)
     lines.extend(["", *reviews, "", "**Result: " + ("FAIL" if failed else "PASS") + "**", ""])
     return "\n".join(lines), failed
+
+
+def report_directory(value):
+    root = Path.cwd().resolve() / "reports"
+    directory = Path(value).resolve()
+    if not directory.is_relative_to(root):
+        raise argparse.ArgumentTypeError("Report directory must be inside this repository's reports/ directory")
+    return directory
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["repository", "image"])
-    parser.add_argument("directory", type=Path)
+    parser.add_argument("directory", type=report_directory)
     args = parser.parse_args()
     summary, failed = summarize(args.mode, args.directory)
     args.directory.mkdir(parents=True, exist_ok=True)
